@@ -1,19 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, where, doc, writeBatch } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID,
-};
-
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+import { adminDb } from '../_lib/firebaseAdmin.js';
 
 export default async function handler(req: any, res: any) {
   try {
@@ -24,9 +10,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // 2. Fetch all crypto assets
-    const assetsCol = collection(db, 'assets');
-    const q = query(assetsCol, where('type', '==', 'crypto'));
-    const snapshot = await getDocs(q);
+    const snapshot = await adminDb.collection('assets').where('type', '==', 'crypto').get();
     const cryptoAssets = snapshot.docs.map((d) => ({
       id: d.id,
       ...(d.data() as any),
@@ -71,9 +55,9 @@ export default async function handler(req: any, res: any) {
 
     // 5. Update Firestore assetPrices
     if (pricesToUpdate.length > 0) {
-      const batch = writeBatch(db);
+      const batch = adminDb.batch();
       pricesToUpdate.forEach(({ ticker, price }) => {
-        const priceDocRef = doc(db, 'assetPrices', ticker);
+        const priceDocRef = adminDb.collection('assetPrices').doc(ticker);
         const asset = cryptoAssets.find((candidate) => candidate.ticker === ticker);
         batch.set(
           priceDocRef,
@@ -85,7 +69,11 @@ export default async function handler(req: any, res: any) {
           { merge: true }
         );
         if (asset) {
-          batch.set(doc(db, 'assets', asset.id), { currentPrice: price }, { merge: true });
+          batch.set(
+            adminDb.collection('assets').doc(asset.id),
+            { currentPrice: price },
+            { merge: true }
+          );
         }
       });
       await batch.commit();

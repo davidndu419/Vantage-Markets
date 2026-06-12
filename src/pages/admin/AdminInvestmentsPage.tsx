@@ -1,6 +1,6 @@
-/* eslint-disable react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { adminService } from '../../services/adminService';
 import { marketPriceService } from '../../services/marketPriceService';
@@ -66,7 +66,40 @@ export const AdminInvestmentsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAssetsAndPrices();
+    const unsubscribeAssets = onSnapshot(
+      collection(db, 'assets'),
+      (snapshot) => {
+        setAssets(snapshot.docs.map((assetDoc) => ({
+          id: assetDoc.id,
+          ...assetDoc.data(),
+        })) as Asset[]);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error listening to investment assets:', error);
+        setLoading(false);
+      }
+    );
+
+    const unsubscribePrices = onSnapshot(
+      collection(db, 'assetPrices'),
+      (snapshot) => {
+        const pricesMap: Record<string, number> = {};
+        snapshot.forEach((priceDoc) => {
+          const data = priceDoc.data();
+          pricesMap[data.ticker || priceDoc.id] = Number(data.price) || 0;
+        });
+        setPrices(pricesMap);
+      },
+      (error) => {
+        console.error('Error listening to investment prices:', error);
+      }
+    );
+
+    return () => {
+      unsubscribeAssets();
+      unsubscribePrices();
+    };
   }, []);
 
   const handleAddAsset = async (e: React.FormEvent) => {

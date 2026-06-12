@@ -30,15 +30,15 @@ interface MarketTickerItem {
   logoUrl: string;
 }
 
+const LANDING_TICKERS = ['BTC', 'ETH', 'BNB', 'NVDA', 'TSLA', 'MSFT'] as const;
+
 const FALLBACK_TICKER_DATA: MarketTickerItem[] = [
   { id: 'crypto-btc', ticker: 'BTC', name: 'Bitcoin', price: 67450.0, change: 2.1, type: 'crypto', logoUrl: '/assets/logos/crypto/btc.svg' },
   { id: 'crypto-eth', ticker: 'ETH', name: 'Ethereum', price: 3540.2, change: 1.5, type: 'crypto', logoUrl: '/assets/logos/crypto/eth.svg' },
-  { id: 'crypto-sol', ticker: 'SOL', name: 'Solana', price: 145.8, change: -1.8, type: 'crypto', logoUrl: '/assets/logos/crypto/sol.svg' },
   { id: 'crypto-bnb', ticker: 'BNB', name: 'BNB', price: 585.3, change: 0.9, type: 'crypto', logoUrl: '/assets/logos/crypto/bnb.svg' },
-  { id: 'stock-aapl', ticker: 'AAPL', name: 'Apple Inc.', price: 175.4, change: 1.2, type: 'stock', logoUrl: '/assets/logos/stocks/aapl.svg' },
-  { id: 'stock-msft', ticker: 'MSFT', name: 'Microsoft Corp.', price: 415.6, change: 0.8, type: 'stock', logoUrl: '/assets/logos/stocks/msft.svg' },
-  { id: 'stock-tsla', ticker: 'TSLA', name: 'Tesla Inc.', price: 178.2, change: -2.4, type: 'stock', logoUrl: '/assets/logos/stocks/tsla.svg' },
   { id: 'stock-nvda', ticker: 'NVDA', name: 'NVIDIA Corp.', price: 875.12, change: 4.8, type: 'stock', logoUrl: '/assets/logos/stocks/nvda.svg' },
+  { id: 'stock-tsla', ticker: 'TSLA', name: 'Tesla Inc.', price: 178.2, change: -2.4, type: 'stock', logoUrl: '/assets/logos/stocks/tsla.svg' },
+  { id: 'stock-msft', ticker: 'MSFT', name: 'Microsoft Corp.', price: 415.6, change: 0.8, type: 'stock', logoUrl: '/assets/logos/stocks/msft.svg' },
 ];
 
 export const LandingPage: React.FC = () => {
@@ -163,15 +163,19 @@ export const LandingPage: React.FC = () => {
     Promise.all([assetService.getAssets(), priceService.getAllPrices()])
       .then(([assets, prices]) => {
         if (assets.length === 0) return;
-        setTickerData(assets.map((asset, index) => ({
-          id: asset.id,
-          ticker: asset.ticker,
-          name: asset.name,
-          price: prices[asset.ticker] || 0,
-          change: index % 3 === 2 ? -0.4 : 0.6,
-          type: asset.type,
-          logoUrl: asset.logoUrl,
-        })));
+        setTickerData(LANDING_TICKERS.map((ticker, index) => {
+          const asset = assets.find((candidate) => candidate.ticker === ticker);
+          const fallback = FALLBACK_TICKER_DATA.find((candidate) => candidate.ticker === ticker)!;
+          return {
+            id: asset?.id || fallback.id,
+            ticker,
+            name: asset?.name || fallback.name,
+            price: prices[ticker] || fallback.price,
+            change: index % 3 === 2 ? -0.4 : 0.6,
+            type: asset?.type || fallback.type,
+            logoUrl: asset?.logoUrl || fallback.logoUrl,
+          };
+        }));
       })
       .catch((error) => {
         console.warn('Firestore asset catalog unavailable, using landing fallbacks:', error);
