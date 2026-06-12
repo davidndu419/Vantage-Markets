@@ -1,0 +1,49 @@
+import { initializeApp, getApp, getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID',
+] as const;
+
+const missingVars: string[] = [];
+
+requiredEnvVars.forEach((varName) => {
+  if (!import.meta.env[varName]) {
+    missingVars.push(varName);
+  }
+});
+
+if (missingVars.length > 0) {
+  const errorMessage = `
+[Firebase Configuration Error]
+The following required environment variables are missing from your configuration:
+${missingVars.map((v) => `  - ${v}`).join('\n')}
+
+Please create a '.env' file in the root of the project with the correct keys.
+Refer to SPEC.md for details.
+  `;
+  console.error(errorMessage);
+  throw new Error(errorMessage);
+}
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+// Initialize Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+export { app, auth, db };

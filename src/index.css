@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-bgMain: #0A0E1A;
+  --color-surface: #111827;
+  --color-borderCustom: #1F2937;
+  --color-goldAccent: #C9A84C;
+  --color-goldHover: #B8923E;
+  --color-textPrimary: #F0F0F0;
+  --color-textSecondary: #9CA3AF;
+  --color-success: #22C55E;
+  --color-danger: #EF4444;
+
+  --font-sans: 'Inter', sans-serif;
+
+  --radius-card: 12px;
+  --radius-btn: 8px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #0A0E1A;
+  color: #F0F0F0;
+  overflow-x: hidden;
+}
+
+/* Custom dark scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0E1A;
+}
+::-webkit-scrollbar-thumb {
+  background: #1F2937;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C9A84C;
+}
+
+/* Premium glassmorphism utility classes */
+.glassmorphism {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(31, 41, 55, 0.6);
+}
+
+.glow-card {
+  box-shadow: 0 0 20px rgba(201, 168, 76, 0.05);
+  border: 1px solid #1F2937;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glow-card:hover {
+  box-shadow: 0 0 25px rgba(201, 168, 76, 0.15);
+  border-color: #C9A84C;
+}
+
+/* Scrolling ticker animation */
+@keyframes ticker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.ticker-content {
+  display: inline-flex;
+  gap: 4rem;
+  padding-left: 2rem;
+  animation: ticker 35s linear infinite;
+}
+
+.ticker-content:hover {
+  animation-play-state: paused;
+}
