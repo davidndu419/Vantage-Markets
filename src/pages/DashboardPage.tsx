@@ -393,9 +393,12 @@ export const DashboardPage: React.FC = () => {
                         {tx.status}
                       </span>
                       {tx.status === 'declined' && (
-                        <span className="text-[8px] font-bold text-danger uppercase tracking-wider block mt-0.5 whitespace-nowrap">
+                        <button
+                          onClick={() => navigate('/support')}
+                          className="text-[8px] font-extrabold text-danger hover:text-danger/80 uppercase tracking-wider block mt-0.5 whitespace-nowrap underline cursor-pointer focus:outline-none"
+                        >
                           CONTACT SUPPORT
-                        </span>
+                        </button>
                       )}
                     </div>
                   </Card>

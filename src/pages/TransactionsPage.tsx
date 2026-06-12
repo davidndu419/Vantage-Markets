@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useMarketMode } from '../contexts/MarketModeContext';
 import { transactionService } from '../services/transactionService';
@@ -13,6 +14,7 @@ import { AssetLogo } from '../components/AssetLogo';
 import { History } from 'lucide-react';
 
 export const TransactionsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { currentMarketMode } = useMarketMode();
   
@@ -138,9 +140,12 @@ export const TransactionsPage: React.FC = () => {
               {row.status}
             </span>
             {row.status === 'declined' && (
-              <span className="text-[9px] font-bold text-danger uppercase tracking-wider block mt-0.5 whitespace-nowrap">
+              <button
+                onClick={() => navigate('/support')}
+                className="text-[9px] font-extrabold text-danger hover:text-danger/80 uppercase tracking-wider block mt-0.5 whitespace-nowrap underline cursor-pointer focus:outline-none"
+              >
                 CONTACT SUPPORT
-              </span>
+              </button>
             )}
           </div>
         );
