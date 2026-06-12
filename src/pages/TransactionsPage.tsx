@@ -175,13 +175,14 @@ export const TransactionsPage: React.FC = () => {
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-[4px] transition-all duration-200 cursor-pointer ${
+              className={`px-3 sm:px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-[4px] transition-all duration-200 cursor-pointer ${
                 activeFilter === filter
                   ? 'bg-goldAccent text-bgMain shadow-[0_0_8px_rgba(201,168,76,0.15)]'
                   : 'text-textSecondary hover:text-textPrimary'
               }`}
             >
-              {filter === 'all' ? 'All Statements' : filter === 'deposit' ? 'Deposits Only' : 'Withdrawals Only'}
+              <span className="sm:hidden">{filter === 'all' ? 'All' : filter === 'deposit' ? 'Deposits' : 'Withdrawals'}</span>
+              <span className="hidden sm:inline">{filter === 'all' ? 'All Statements' : filter === 'deposit' ? 'Deposits Only' : 'Withdrawals Only'}</span>
             </button>
           ))}
         </div>
@@ -198,7 +199,71 @@ export const TransactionsPage: React.FC = () => {
           />
         ) : (
           <div className="bg-surface border border-borderCustom rounded-card overflow-hidden">
-            <Table columns={columns} data={filteredTransactions} />
+            <Table
+              columns={columns}
+              data={filteredTransactions}
+              mobileRender={(row) => {
+                const asset = assets.find((a) => a.id === row.assetId || a.ticker === row.ticker);
+                const date = row.createdAt instanceof Date ? row.createdAt : (row.createdAt as any).toDate();
+                const statusMap = {
+                  pending: 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20',
+                  completed: 'bg-success/10 text-success border border-success/20',
+                  declined: 'bg-danger/10 text-danger border border-danger/20',
+                };
+                return (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <AssetLogo
+                          name={row.assetName}
+                          ticker={row.ticker}
+                          logoUrl={asset?.logoUrl}
+                          className="h-8 w-8"
+                        />
+                        <div>
+                          <div className="text-xs font-bold text-textPrimary">{row.assetName}</div>
+                          <div className="text-[9px] text-textSecondary font-mono uppercase mt-0.5">
+                            {row.ticker} • {date.toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-1.5">
+                        <span className="font-mono text-sm font-bold text-textPrimary">
+                          ${row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className={`text-[8px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-[4px] ${statusMap[row.status] || ''}`}>
+                          {row.status}
+                        </span>
+                        {row.status === 'declined' && (
+                          <button
+                            onClick={() => navigate('/support')}
+                            className="text-[8px] font-extrabold text-danger hover:text-danger/80 uppercase tracking-wider block mt-0.5 whitespace-nowrap underline cursor-pointer focus:outline-none"
+                          >
+                            CONTACT SUPPORT
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between border-t border-borderCustom/20 pt-2 text-[11px]">
+                      <div>
+                        <span className="text-textSecondary uppercase font-medium">Type: </span>
+                        <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border ${
+                          row.type === 'deposit'
+                            ? 'bg-success/5 text-success border-success/15'
+                            : 'bg-indigo-500/5 text-indigo-400 border-indigo-500/15'
+                        }`}>{row.type}</span>
+                      </div>
+                      <div>
+                        <span className="text-textSecondary uppercase font-medium">Yield: </span>
+                        <span className="font-mono text-textSecondary">
+                          {row.quantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} {row.ticker}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
           </div>
         )}
       </section>

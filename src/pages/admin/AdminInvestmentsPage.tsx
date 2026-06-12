@@ -477,6 +477,55 @@ export const AdminInvestmentsPage: React.FC = () => {
                 No assets configured in library.
               </div>
             }
+            mobileRender={(row) => {
+              const currentPrice = prices[row.ticker] || 0;
+              return (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <AssetLogo name={row.name} ticker={row.ticker} logoUrl={row.logoUrl} className="h-8 w-8" />
+                      <div>
+                        <span className="font-bold text-xs text-textPrimary block">{row.name}</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[9px] text-textSecondary font-mono">{row.ticker}</span>
+                          <Badge variant="neutral" className="text-[8px] font-extrabold tracking-widest uppercase">{row.type}</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {currentPrice > 0 ? (
+                        <span className="text-sm font-mono font-bold text-goldAccent">
+                          ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-danger">No Price</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-borderCustom/20 pt-2">
+                    <span className="text-[10px] font-mono text-textSecondary">
+                      ${row.minDeposit.toLocaleString()} – ${row.maxDeposit.toLocaleString()}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        className="p-1 h-7 w-7 bg-borderCustom/40 border-borderCustom hover:border-goldAccent text-textSecondary hover:text-goldAccent flex items-center justify-center rounded-btn"
+                        onClick={() => handleOpenEdit(row)}
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="p-1 h-7 w-7 bg-danger/10 border-danger/20 hover:bg-danger/25 text-danger flex items-center justify-center rounded-btn"
+                        onClick={() => handleDeleteAsset(row.id)}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }}
           />
         </div>
 

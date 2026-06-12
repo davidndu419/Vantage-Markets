@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   Settings
 } from 'lucide-react';
+import { BrandLogo } from '../../components/BrandLogo';
 
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -61,14 +62,8 @@ export const AdminLayout: React.FC = () => {
       <aside className="w-full md:w-64 bg-surface border-r border-borderCustom flex flex-col shrink-0">
         {/* Sidebar Header Brand */}
         <div className="p-6 border-b border-borderCustom flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-goldAccent text-bgMain font-extrabold text-lg border border-goldAccent/40">
-              VM
-            </div>
-            <div>
-              <span className="font-extrabold text-lg tracking-wider text-textPrimary">VANTAGE</span>
-              <span className="font-medium text-[9px] tracking-[0.25em] text-goldAccent block -mt-1 uppercase">ADMIN NODE</span>
-            </div>
+          <div className="cursor-pointer select-none" onClick={() => navigate('/admin')}>
+            <BrandLogo size="md" showText={true} subtext="ADMIN NODE" />
           </div>
         </div>
 

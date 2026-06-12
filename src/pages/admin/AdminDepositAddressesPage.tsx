@@ -384,6 +384,57 @@ export const AdminDepositAddressesPage: React.FC = () => {
                 No deposit addresses registered.
               </div>
             }
+            mobileRender={(row) => (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="font-bold text-xs text-textPrimary block">{row.label}</span>
+                    <span className="text-[10px] text-goldAccent font-bold block mt-0.5">
+                      {row.paymentAssetName || (row.network === 'BTC' ? 'Bitcoin' : 'Tether')} ({row.paymentAssetSymbol || (row.network === 'BTC' ? 'BTC' : 'USDT')})
+                    </span>
+                    <span className="text-[10px] text-textSecondary font-mono block mt-1 break-all">
+                      {row.address}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Badge variant="neutral" className="text-[8px] font-extrabold tracking-widest uppercase">{row.network}</Badge>
+                    {row.active ? (
+                      <Badge variant="success" className="text-[8px] font-extrabold tracking-widest uppercase flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" /> ACTIVE
+                      </Badge>
+                    ) : (
+                      <Badge variant="neutral" className="text-[8px] font-extrabold tracking-widest uppercase">INACTIVE</Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 border-t border-borderCustom/20 pt-2">
+                  {!row.active && (
+                    <Button
+                      variant="secondary"
+                      className="text-[9px] font-extrabold uppercase tracking-widest px-2.5 min-h-[28px] h-7 bg-goldAccent/10 border-goldAccent/30 hover:bg-goldAccent/20 text-goldAccent flex items-center gap-1"
+                      disabled={togglingActiveId !== null}
+                      onClick={() => handleSetActive(row.id, row.network)}
+                    >
+                      Activate
+                    </Button>
+                  )}
+                  <Button
+                    variant="secondary"
+                    className="p-1 h-7 w-7 bg-borderCustom/40 border-borderCustom hover:border-goldAccent text-textSecondary hover:text-goldAccent flex items-center justify-center rounded-btn"
+                    onClick={() => handleOpenEdit(row)}
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="p-1 h-7 w-7 bg-danger/10 border-danger/20 hover:bg-danger/25 text-danger flex items-center justify-center rounded-btn"
+                    onClick={() => handleDeleteAddress(row.id)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
           />
         </div>
 

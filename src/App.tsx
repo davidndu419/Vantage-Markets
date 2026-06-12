@@ -20,6 +20,9 @@ import { WithdrawPage } from './pages/WithdrawPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { SupportPage } from './pages/SupportPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TermsOfServicePage } from './pages/legal/TermsOfServicePage';
+import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicyPage';
+import { RiskDisclosurePage } from './pages/legal/RiskDisclosurePage';
 
 // Admin Pages
 import { AdminLayout } from './pages/admin/AdminLayout';
@@ -90,6 +93,11 @@ export const App: React.FC = () => {
               <Route path="withdrawals" element={<AdminTransactionsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
+
+            {/* Legal Public Routes */}
+            <Route path="/legal/terms" element={<TermsOfServicePage />} />
+            <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/legal/risk-disclosure" element={<RiskDisclosurePage />} />
 
             {/* Fallback Catch-All */}
             <Route path="*" element={<Navigate to="/" replace />} />

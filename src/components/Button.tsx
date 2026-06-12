@@ -2,6 +2,7 @@ import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   fullWidth?: boolean;
 }
@@ -9,6 +10,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
+  size = 'md',
   isLoading = false,
   fullWidth = false,
   className = '',
@@ -16,7 +18,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyle =
-    'flex items-center justify-center min-h-[48px] px-6 rounded-[8px] text-[15px] font-semibold tracking-wide transition-all duration-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
+    'flex items-center justify-center rounded-[8px] font-semibold tracking-wide transition-all duration-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
   const variants = {
     primary:
@@ -29,12 +31,18 @@ export const Button: React.FC<ButtonProps> = ({
       'bg-transparent hover:bg-danger/10 text-danger border border-danger/30 hover:border-danger hover:shadow-[0_0_15px_rgba(239,68,68,0.15)]',
   };
 
+  const sizeStyles = {
+    sm: 'min-h-[36px] h-9 px-3 text-xs',
+    md: 'min-h-[40px] h-10 px-4 text-sm',
+    lg: 'min-h-[44px] h-11 px-5 text-sm',
+  };
+
   const widthStyle = fullWidth ? 'w-full' : '';
 
   return (
     <button
       disabled={disabled || isLoading}
-      className={`${baseStyle} ${variants[variant]} ${widthStyle} ${className}`}
+      className={`${baseStyle} ${variants[variant]} ${sizeStyles[size]} ${widthStyle} ${className}`}
       {...props}
     >
       {isLoading ? (

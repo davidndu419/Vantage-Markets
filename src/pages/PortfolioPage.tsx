@@ -268,7 +268,58 @@ export const PortfolioPage: React.FC = () => {
           </div>
         ) : (
           <div className="bg-surface border border-borderCustom rounded-card overflow-hidden">
-            <Table columns={portfolioColumns} data={filteredHoldings} />
+            <Table
+              columns={portfolioColumns}
+              data={filteredHoldings}
+              mobileRender={(row) => {
+                const asset = getHoldingAsset(assets, row.assetId, row.ticker);
+                const price = prices[row.ticker] || 0;
+                const value = row.quantity * price;
+                const allocationPercent = activeValuation > 0 ? (value / activeValuation) * 100 : 0;
+                return (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <AssetLogo
+                          name={row.assetName}
+                          ticker={row.ticker}
+                          logoUrl={asset?.logoUrl}
+                          className="h-8 w-8"
+                        />
+                        <div>
+                          <div className="text-xs font-bold text-textPrimary">{row.assetName}</div>
+                          <div className="text-[9px] text-textSecondary font-mono uppercase mt-0.5">
+                            {row.ticker} • <span className="text-[9px] font-bold uppercase tracking-widest text-textSecondary bg-borderCustom/25 border border-borderCustom px-1.5 py-0.5 rounded">{row.type}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-goldAccent font-semibold text-sm">
+                          ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-[9px] text-textSecondary tracking-wide mt-0.5 font-medium">
+                          {allocationPercent.toFixed(1)}% weight
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between border-t border-borderCustom/20 pt-2 text-[11px]">
+                      <div>
+                        <span className="text-textSecondary uppercase font-medium">Units: </span>
+                        <span className="font-mono text-textPrimary font-semibold">
+                          {row.quantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-textSecondary uppercase font-medium">Price: </span>
+                        <span className="font-mono text-textSecondary">
+                          ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
           </div>
         )}
       </section>

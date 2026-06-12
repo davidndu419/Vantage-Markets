@@ -157,6 +157,45 @@ export const AdminUsersPage: React.FC = () => {
             <p className="text-[9px] text-textSecondary uppercase tracking-widest mt-1">No registered user matches your query filter parameters.</p>
           </div>
         }
+        mobileRender={(row) => (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-borderCustom/60 text-goldAccent font-extrabold text-[11px] border border-borderCustom shrink-0">
+                  {row.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-textPrimary">{row.name}</div>
+                  <div className="text-[10px] text-textSecondary font-mono mt-0.5 break-all">{row.email}</div>
+                </div>
+              </div>
+              <Badge variant={row.role === 'admin' ? 'success' : 'neutral'} className="text-[9px] font-extrabold tracking-widest uppercase shrink-0 ml-2">
+                {row.role === 'admin' ? 'ADMIN' : 'TRADER'}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between border-t border-borderCustom/20 pt-2">
+              <div className="flex items-center gap-1.5">
+                {row.withdrawalFrozen ? (
+                  <Badge variant="error" className="text-[9px] font-extrabold tracking-widest uppercase flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" /> Frozen
+                  </Badge>
+                ) : (
+                  <Badge variant="success" className="text-[9px] font-extrabold tracking-widest uppercase flex items-center gap-1">
+                    <Unlock className="w-2.5 h-2.5" /> Active
+                  </Badge>
+                )}
+                <span className="text-[9px] text-textSecondary font-mono">{row.uid.substring(0, 12)}...</span>
+              </div>
+              <Button
+                variant="secondary"
+                className="text-[9px] font-extrabold uppercase tracking-widest px-3 min-h-[30px] h-8 border-borderCustom hover:border-goldAccent hover:text-goldAccent flex items-center gap-1"
+                onClick={() => navigate(`/admin/users/${row.uid}`)}
+              >
+                <Edit2 className="w-3.5 h-3.5" /> Manage
+              </Button>
+            </div>
+          </div>
+        )}
       />
     </div>
   );

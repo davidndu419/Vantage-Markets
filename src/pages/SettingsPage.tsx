@@ -216,82 +216,10 @@ export const SettingsPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* SECURITY ACTIONS */}
-          <Card variant="standard" className="border border-borderCustom/60">
-            <div className="flex items-center gap-3 border-b border-borderCustom/40 pb-4 mb-5">
-              <Lock className="w-5 h-5 text-goldAccent" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-textPrimary">Security Node</h2>
-            </div>
-
-            <p className="text-xs text-textSecondary font-medium leading-relaxed mb-6">
-              Keep your trading credentials safe. If you suspect any unauthorized access, reset your password immediately or reach out to support.
-            </p>
-
-            <div className="flex flex-wrap gap-4">
-              <Button
-                variant="secondary"
-                onClick={handlePasswordReset}
-                isLoading={resetLoading}
-                className="text-xs font-bold uppercase tracking-wider border border-borderCustom h-11 min-h-[44px]"
-              >
-                <Key className="w-4 h-4 mr-2" /> Request Password Reset
-              </Button>
-
-              <Button
-                variant="danger"
-                onClick={handleLogout}
-                className="text-xs font-bold uppercase tracking-wider h-11 min-h-[44px]"
-              >
-                <LogOut className="w-4 h-4 mr-2" /> End Working Session
-              </Button>
-            </div>
-
-            {resetSent && (
-              <div className="mt-4 p-3 rounded-[8px] bg-success/10 border border-success/20 text-xs font-semibold text-success tracking-wide flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Password reset email dispatched to {userProfile?.email} successfully.</span>
-              </div>
-            )}
-
-            {resetError && (
-              <div className="mt-4 p-3 rounded-[8px] bg-danger/10 border border-danger/20 text-xs font-semibold text-danger tracking-wide flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4" />
-                <span>Error: {resetError}</span>
-              </div>
-            )}
-          </Card>
         </div>
 
         {/* Right Column: Account Status & Help / Support Shortcuts */}
         <div className="flex flex-col gap-6">
-          {/* ACCOUNT INTEGRITY STATUS */}
-          <Card variant="standard" className="border border-borderCustom/60">
-            <div className="flex items-center gap-3 border-b border-borderCustom/40 pb-4 mb-5">
-              <ShieldAlert className="w-5 h-5 text-goldAccent" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-textPrimary">Integrity Status</h2>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div>
-                <span className="text-[10px] text-textSecondary font-bold uppercase tracking-wider block mb-1">Withdrawal Gateway</span>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest ${
-                  userProfile?.withdrawalFrozen
-                    ? 'bg-danger/10 border border-danger/20 text-danger'
-                    : 'bg-success/10 border border-success/20 text-success'
-                }`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${userProfile?.withdrawalFrozen ? 'bg-danger' : 'bg-success'}`} />
-                  {userProfile?.withdrawalFrozen ? 'Locked / Frozen' : 'Active / Operational'}
-                </span>
-              </div>
-
-              {userProfile?.withdrawalFrozen && (
-                <div className="p-3 bg-danger/5 border border-danger/15 rounded-[6px] text-xs font-medium text-danger leading-relaxed">
-                  <span className="font-bold block uppercase tracking-wider text-[9px] mb-1">Reason for Hold:</span>
-                  {userProfile.freezeReason || 'Your account withdrawal permissions have been temporarily locked by administrative guidelines. Please contact support node.'}
-                </div>
-              )}
-            </div>
-          </Card>
 
           {/* HELP & SUPPORT */}
           <Card variant="standard" className="border border-borderCustom/60">
@@ -331,15 +259,24 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-2.5">
-              <button className="flex items-center justify-between text-left text-xs text-textSecondary hover:text-textPrimary font-semibold transition-colors py-1 cursor-pointer">
+              <button
+                onClick={() => navigate('/legal/terms')}
+                className="flex items-center justify-between text-left text-xs text-textSecondary hover:text-textPrimary font-semibold transition-colors py-1 cursor-pointer"
+              >
                 <span>Terms of Service</span>
                 <ChevronRight className="w-3.5 h-3.5 text-borderCustom" />
               </button>
-              <button className="flex items-center justify-between text-left text-xs text-textSecondary hover:text-textPrimary font-semibold transition-colors py-1 cursor-pointer">
-                <span>Privacy & Cookies policy</span>
+              <button
+                onClick={() => navigate('/legal/privacy')}
+                className="flex items-center justify-between text-left text-xs text-textSecondary hover:text-textPrimary font-semibold transition-colors py-1 cursor-pointer"
+              >
+                <span>Privacy & Cookies Policy</span>
                 <ChevronRight className="w-3.5 h-3.5 text-borderCustom" />
               </button>
-              <button className="flex items-center justify-between text-left text-xs text-textSecondary hover:text-textPrimary font-semibold transition-colors py-1 cursor-pointer">
+              <button
+                onClick={() => navigate('/legal/risk-disclosure')}
+                className="flex items-center justify-between text-left text-xs text-textSecondary hover:text-textPrimary font-semibold transition-colors py-1 cursor-pointer"
+              >
                 <span>Vantage Risk Disclosure</span>
                 <ChevronRight className="w-3.5 h-3.5 text-borderCustom" />
               </button>
@@ -347,6 +284,51 @@ export const SettingsPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* SECURITY NODE — Full-width at bottom */}
+      <Card variant="standard" className="border border-borderCustom/60">
+        <div className="flex items-center gap-3 border-b border-borderCustom/40 pb-4 mb-5">
+          <Lock className="w-5 h-5 text-goldAccent" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-textPrimary">Security Node</h2>
+        </div>
+
+        <p className="text-xs text-textSecondary font-medium leading-relaxed mb-6">
+          Keep your trading credentials safe. If you suspect any unauthorized access, reset your password immediately or reach out to support.
+        </p>
+
+        <div className="flex flex-wrap gap-4">
+          <Button
+            variant="secondary"
+            onClick={handlePasswordReset}
+            isLoading={resetLoading}
+            className="text-xs font-bold uppercase tracking-wider border border-borderCustom h-11 min-h-[44px]"
+          >
+            <Key className="w-4 h-4 mr-2" /> Request Password Reset
+          </Button>
+
+          <Button
+            variant="danger"
+            onClick={handleLogout}
+            className="text-xs font-bold uppercase tracking-wider h-11 min-h-[44px]"
+          >
+            <LogOut className="w-4 h-4 mr-2" /> End Working Session
+          </Button>
+        </div>
+
+        {resetSent && (
+          <div className="mt-4 p-3 rounded-[8px] bg-success/10 border border-success/20 text-xs font-semibold text-success tracking-wide flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" />
+            <span>Password reset email dispatched to {userProfile?.email} successfully.</span>
+          </div>
+        )}
+
+        {resetError && (
+          <div className="mt-4 p-3 rounded-[8px] bg-danger/10 border border-danger/20 text-xs font-semibold text-danger tracking-wide flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4" />
+            <span>Error: {resetError}</span>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

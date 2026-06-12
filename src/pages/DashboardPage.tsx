@@ -169,15 +169,7 @@ export const DashboardPage: React.FC = () => {
             Secure Trading Room Node • {currentMarketMode === 'stock' ? 'Stock Mode' : 'Crypto Mode'} active
           </p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
-          <Button
-            variant="secondary"
-            className="text-xs font-bold uppercase tracking-wider min-h-[40px] h-10 px-4 w-full sm:w-auto border border-borderCustom"
-            onClick={() => navigate('/portfolio')}
-          >
-            <Briefcase className="w-4 h-4 mr-2" /> View Portfolio Ledger
-          </Button>
-        </div>
+
       </section>
 
       {/* Portfolio Balance and CTAs grid */}
@@ -332,7 +324,52 @@ export const DashboardPage: React.FC = () => {
             />
           ) : (
             <div className="bg-surface border border-borderCustom rounded-card overflow-hidden">
-              <Table columns={holdingsColumns} data={filteredHoldings} />
+              <Table 
+                columns={holdingsColumns} 
+                data={filteredHoldings} 
+                mobileRender={(row) => {
+                  const asset = getHoldingAsset(assets, row.assetId, row.ticker);
+                  const price = prices[row.ticker] || 0;
+                  const val = row.quantity * price;
+                  return (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <AssetLogo
+                            name={row.assetName}
+                            ticker={row.ticker}
+                            logoUrl={asset?.logoUrl}
+                            className="h-8 w-8"
+                          />
+                          <div>
+                            <div className="text-xs font-bold text-textPrimary">{row.assetName}</div>
+                            <div className="text-[9px] text-textSecondary font-mono uppercase mt-0.5">{row.ticker}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono text-goldAccent font-semibold text-sm">
+                            ${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between border-t border-borderCustom/20 pt-2 text-[11px]">
+                        <div>
+                          <span className="text-textSecondary uppercase font-medium">Qty Held: </span>
+                          <span className="font-mono text-textPrimary font-semibold">
+                            {row.quantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-textSecondary uppercase font-medium">Price: </span>
+                          <span className="font-mono text-textSecondary">
+                            ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }}
+              />
             </div>
           )}
         </div>

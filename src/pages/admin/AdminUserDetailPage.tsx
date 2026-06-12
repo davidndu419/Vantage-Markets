@@ -650,6 +650,39 @@ export const AdminUserDetailPage: React.FC = () => {
               This client does not currently hold any assets.
             </div>
           }
+          mobileRender={(row) => (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-textPrimary">{row.assetName}</span>
+                    <Badge variant="neutral" className="text-[8px] font-extrabold tracking-widest uppercase">{row.type}</Badge>
+                  </div>
+                  <span className="text-[10px] text-textSecondary uppercase font-mono mt-0.5 block">{row.ticker}</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono text-xs font-bold text-goldAccent">
+                    {row.quantity.toFixed(row.type === 'crypto' ? 6 : 4)}
+                  </div>
+                  <div className="font-mono text-[10px] text-textPrimary">
+                    ${holdingValue(row).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between border-t border-borderCustom/20 pt-2">
+                <span className="text-[10px] text-textSecondary font-mono">
+                  {prices[row.ticker] > 0 ? `$${prices[row.ticker].toLocaleString(undefined, { maximumFractionDigits: 8 })}` : 'No live price'}
+                </span>
+                <Button
+                  variant="secondary"
+                  className="p-1 h-7 w-7 border-danger/30 text-danger hover:bg-danger/10"
+                  onClick={() => setHoldingToDelete(row)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
         />
       </div>
 
@@ -670,6 +703,45 @@ export const AdminUserDetailPage: React.FC = () => {
                 No deposit history found.
               </div>
             }
+            mobileRender={(row) => {
+              const dt = row.createdAt instanceof Date ? row.createdAt : (row.createdAt as any)?.toDate?.() || new Date();
+              return (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-mono text-xs font-bold text-textPrimary block">{row.quantity.toFixed(4)} {row.ticker}</span>
+                      <span className="text-[9px] text-textSecondary block font-mono mt-0.5">${row.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} • {dt.toLocaleDateString()}</span>
+                    </div>
+                    <Badge
+                      variant={row.status === 'completed' ? 'success' : row.status === 'declined' ? 'error' : 'neutral'}
+                      className="text-[8px] font-extrabold tracking-widest uppercase"
+                    >
+                      {row.status}
+                    </Badge>
+                  </div>
+                  {row.status === 'pending' && (
+                    <div className="flex items-center gap-1.5 border-t border-borderCustom/20 pt-2">
+                      <Button
+                        variant="secondary"
+                        className="flex-1 h-8 bg-success/15 border-success/30 hover:bg-success/25 text-success flex items-center justify-center gap-1 rounded-btn text-[9px] font-extrabold uppercase"
+                        disabled={actioningTxId !== null}
+                        onClick={() => handleApproveDeposit(row.id)}
+                      >
+                        <Check className="w-3.5 h-3.5" /> Approve
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="flex-1 h-8 bg-danger/15 border-danger/30 hover:bg-danger/25 text-danger flex items-center justify-center gap-1 rounded-btn text-[9px] font-extrabold uppercase"
+                        disabled={actioningTxId !== null}
+                        onClick={() => handleDeclineDeposit(row.id)}
+                      >
+                        <X className="w-3.5 h-3.5" /> Decline
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            }}
           />
         </div>
 
@@ -687,6 +759,45 @@ export const AdminUserDetailPage: React.FC = () => {
                 No withdrawal history found.
               </div>
             }
+            mobileRender={(row) => {
+              const dt = row.createdAt instanceof Date ? row.createdAt : (row.createdAt as any)?.toDate?.() || new Date();
+              return (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-mono text-xs font-bold text-textPrimary block">{row.quantity.toFixed(4)} {row.ticker}</span>
+                      <span className="text-[9px] text-textSecondary block font-mono mt-0.5">${row.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} • {dt.toLocaleDateString()}</span>
+                    </div>
+                    <Badge
+                      variant={row.status === 'completed' ? 'success' : row.status === 'declined' ? 'error' : 'neutral'}
+                      className="text-[8px] font-extrabold tracking-widest uppercase"
+                    >
+                      {row.status}
+                    </Badge>
+                  </div>
+                  {row.status === 'pending' && (
+                    <div className="flex items-center gap-1.5 border-t border-borderCustom/20 pt-2">
+                      <Button
+                        variant="secondary"
+                        className="flex-1 h-8 bg-success/15 border-success/30 hover:bg-success/25 text-success flex items-center justify-center gap-1 rounded-btn text-[9px] font-extrabold uppercase"
+                        disabled={actioningTxId !== null}
+                        onClick={() => handleApproveWithdrawal(row.id)}
+                      >
+                        <Check className="w-3.5 h-3.5" /> Approve
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="flex-1 h-8 bg-danger/15 border-danger/30 hover:bg-danger/25 text-danger flex items-center justify-center gap-1 rounded-btn text-[9px] font-extrabold uppercase"
+                        disabled={actioningTxId !== null}
+                        onClick={() => handleDeclineWithdrawal(row.id)}
+                      >
+                        <X className="w-3.5 h-3.5" /> Decline
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            }}
           />
         </div>
 

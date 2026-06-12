@@ -1,0 +1,41 @@
+{
+  "short_name": "Vantage",
+  "name": "Vantage Markets",
+  "description": "Institutional-grade dark-luxury cryptocurrency and stock trading platform.",
+  "icons": [
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/dashboard",
+  "background_color": "#050B18",
+  "theme_color": "#050B18",
+  "display": "standalone",
+  "orientation": "portrait"
+}

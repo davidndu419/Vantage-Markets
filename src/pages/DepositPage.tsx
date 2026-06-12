@@ -87,14 +87,14 @@ export const DepositPage: React.FC = () => {
           </p>
         </Card>
       ) : (
-        <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredAssets.map((asset) => {
             const currentPrice = prices[asset.ticker] || 0;
             return (
               <Card
                 key={asset.id}
                 variant="standard"
-                className="p-6 flex flex-col justify-between glow-card bg-surface hover:scale-[1.01] transition-all duration-300"
+                className="p-4 sm:p-6 flex flex-col justify-between glow-card bg-surface hover:scale-[1.01] transition-all duration-300"
               >
                 <div>
                   {/* Top Row: Symbol & Type Badge */}

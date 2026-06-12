@@ -19,6 +19,7 @@ import type { Column } from '../components/Table';
 import { priceService } from '../services/priceService';
 import { assetService } from '../services/assetService';
 import { AssetLogo } from '../components/AssetLogo';
+import { BrandLogo } from '../components/BrandLogo';
 
 interface MarketTickerItem {
   id?: string;
@@ -309,27 +310,23 @@ export const LandingPage: React.FC = () => {
       {/* Sticky glass navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 glassmorphism border-b border-borderCustom/50 shadow-lg">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3.5 cursor-pointer select-none" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-goldAccent text-bgMain font-black text-xl border border-goldAccent/40 shadow-[0_0_20px_rgba(201,168,76,0.3)]">
-              VM
-            </div>
-            <div>
-              <span className="font-black text-xl tracking-wider text-textPrimary">VANTAGE</span>
-              <span className="font-semibold text-[9px] tracking-[0.3em] text-goldAccent block -mt-1 uppercase">MARKETS</span>
-            </div>
+          <div className="cursor-pointer select-none" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <BrandLogo size="md" showText={true} />
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Button
               variant="ghost"
-              className="text-xs font-bold uppercase tracking-widest text-textSecondary hover:text-textPrimary"
+              size="sm"
+              className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-textSecondary hover:text-textPrimary"
               onClick={() => navigate('/auth')}
             >
               Sign In
             </Button>
             <Button
               variant="primary"
-              className="text-xs font-extrabold uppercase tracking-widest h-11 min-h-[44px] px-6 shadow-[0_0_15px_rgba(201,168,76,0.15)]"
+              size="sm"
+              className="font-extrabold uppercase tracking-wider shadow-[0_0_15px_rgba(201,168,76,0.15)] text-[10px] sm:text-xs px-2.5 sm:px-4"
               onClick={() => navigate('/auth')}
             >
               Start Trading
@@ -381,19 +378,21 @@ export const LandingPage: React.FC = () => {
               Access stock equities and cryptocurrency assets on a high-frequency trading desk. Run instant client balance checks without locally cached registries.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm sm:max-w-md mt-2">
               <Button
                 variant="primary"
+                size="md"
                 fullWidth
-                className="h-12.5 min-h-[50px] text-xs font-extrabold uppercase tracking-widest shadow-[0_0_25px_rgba(201,168,76,0.2)]"
+                className="font-extrabold uppercase tracking-wider shadow-[0_0_20px_rgba(201,168,76,0.15)]"
                 onClick={() => navigate('/auth')}
               >
                 Create Account <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
               <Button
                 variant="secondary"
+                size="md"
                 fullWidth
-                className="h-12.5 min-h-[50px] text-xs font-extrabold uppercase tracking-widest border border-borderCustom hover:border-goldAccent/40 bg-surface/30"
+                className="font-extrabold uppercase tracking-wider border border-borderCustom hover:border-goldAccent/40 bg-surface/30"
                 onClick={() => {
                   const el = document.getElementById('live-markets');
                   el?.scrollIntoView({ behavior: 'smooth' });
@@ -532,7 +531,42 @@ export const LandingPage: React.FC = () => {
           <p className="text-xs text-textSecondary max-w-md mx-auto mt-2 font-medium">Real-time asset tickers compiled from global liquidity pools.</p>
         </div>
 
-        <Table columns={liveMarketColumns} data={tickerData.slice(0, 6)} />
+        <Table 
+          columns={liveMarketColumns} 
+          data={tickerData.slice(0, 6)} 
+          mobileRender={(row) => (
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3.5">
+                  <AssetLogo name={row.name} ticker={row.ticker} logoUrl={row.logoUrl} />
+                  <div>
+                    <div className="text-textPrimary font-bold text-sm tracking-wide">{row.name}</div>
+                    <div className="text-textSecondary text-[10px] tracking-widest uppercase font-mono mt-0.5">{row.ticker}</div>
+                  </div>
+                </div>
+                <div className="text-right flex flex-col items-end">
+                  <span className="font-mono text-textPrimary font-semibold text-sm">
+                    ${row.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className={`font-mono text-[10px] font-bold mt-0.5 ${row.change >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {row.change >= 0 ? '▲ +' : '▼ '}
+                    {Math.abs(row.change)}%
+                  </span>
+                </div>
+              </div>
+              <div className="border-t border-borderCustom/20 pt-2 flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="font-extrabold uppercase tracking-wider text-goldAccent border border-goldAccent/25 hover:border-goldAccent hover:bg-goldAccent/5"
+                  onClick={() => navigate('/auth')}
+                >
+                  Initialize
+                </Button>
+              </div>
+            </div>
+          )}
+        />
       </section>
 
       {/* How it works */}
@@ -693,20 +727,12 @@ export const LandingPage: React.FC = () => {
       {/* Footer */}
       <footer className="relative z-10 w-full border-t border-borderCustom/50 bg-bgMain mt-auto select-none">
         <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 flex items-center justify-center rounded bg-goldAccent text-bgMain font-black text-sm border border-goldAccent/40">
-              VM
-            </div>
-            <div>
-              <span className="font-extrabold text-sm tracking-wider text-textPrimary">VANTAGE</span>
-              <span className="font-medium text-[8px] tracking-[0.25em] text-goldAccent block -mt-1 uppercase">MARKETS</span>
-            </div>
-          </div>
+          <BrandLogo size="sm" showText={true} />
 
           <div className="flex gap-8 text-[10px] font-extrabold text-textSecondary uppercase tracking-widest">
-            <a href="#terms" className="hover:text-goldAccent transition-colors">Terms of Use</a>
-            <a href="#privacy" className="hover:text-goldAccent transition-colors">Privacy Policy</a>
-            <a href="#support" className="hover:text-goldAccent transition-colors" onClick={(e) => { e.preventDefault(); navigate('/auth'); }}>Support Desk</a>
+            <button onClick={() => navigate('/legal/terms')} className="hover:text-goldAccent transition-colors cursor-pointer">Terms of Use</button>
+            <button onClick={() => navigate('/legal/privacy')} className="hover:text-goldAccent transition-colors cursor-pointer">Privacy Policy</button>
+            <button onClick={() => navigate('/support')} className="hover:text-goldAccent transition-colors cursor-pointer">Support Desk</button>
           </div>
 
           <div className="text-[10px] text-textSecondary font-semibold tracking-wide uppercase font-mono">

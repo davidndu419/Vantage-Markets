@@ -1,4 +1,5 @@
 import React from 'react';
+import { BrandLogo } from './BrandLogo';
 
 interface LoaderProps {
   variant?: 'full-screen' | 'inline' | 'skeleton';
@@ -13,12 +14,12 @@ export const Loader: React.FC<LoaderProps> = ({
 }) => {
   if (variant === 'full-screen') {
     return (
-      <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-bgMain/90 backdrop-blur-sm ${className}`}>
-        <div className="relative flex items-center justify-center">
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-borderCustom border-t-goldAccent"></div>
-          <span className="absolute text-xs font-bold tracking-widest text-goldAccent">VM</span>
+      <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050B18]/95 backdrop-blur-sm ${className}`}>
+        <div className="relative flex items-center justify-center animate-pulse">
+          <div className="absolute inset-0 rounded-full bg-goldAccent/10 blur-xl scale-110"></div>
+          <BrandLogo size={72} showText={false} className="relative z-10 filter drop-shadow-[0_0_15px_rgba(212,175,55,0.25)]" />
         </div>
-        <p className="mt-4 text-xs font-semibold tracking-wider text-textSecondary uppercase animate-pulse">
+        <p className="mt-6 text-[10px] font-bold tracking-[0.2em] text-goldAccent uppercase animate-pulse">
           Securing Connection...
         </p>
       </div>

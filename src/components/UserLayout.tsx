@@ -16,6 +16,7 @@ import {
   ChevronDown,
   MessageSquare
 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 const formatRelativeTime = (date: Date | null): string => {
   if (!date) return '';
@@ -120,14 +121,8 @@ export const UserLayout: React.FC = () => {
       <nav className="glassmorphism border-b border-borderCustom sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => navigate('/dashboard')}>
-            <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-goldAccent text-bgMain font-extrabold text-lg border border-goldAccent/40 shadow-[0_0_15px_rgba(201,168,76,0.15)]">
-              VM
-            </div>
-            <div>
-              <span className="font-extrabold text-lg tracking-wider text-textPrimary">VANTAGE</span>
-              <span className="font-medium text-[9px] tracking-[0.25em] text-goldAccent block -mt-1 uppercase">MARKETS</span>
-            </div>
+          <div className="cursor-pointer select-none" onClick={() => navigate('/dashboard')}>
+            <BrandLogo size="md" showText={true} />
           </div>
 
           {/* Desktop Navigation Links */}
@@ -281,7 +276,7 @@ export const UserLayout: React.FC = () => {
       </main>
 
       {/* Bottom Tab Navigation (Fixed at the bottom on mobile) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-lg border-t border-borderCustom px-4 py-2 flex justify-between items-center z-40 shadow-[0_-5px_20px_rgba(0,0,0,0.4)]">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface/95 backdrop-blur-lg border-t border-borderCustom px-2 flex justify-between items-center z-40 shadow-[0_-5px_20px_rgba(0,0,0,0.4)]">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = location.pathname === item.path;
@@ -289,20 +284,20 @@ export const UserLayout: React.FC = () => {
             <NavLink
               key={item.path}
               to={item.path}
-              className="flex flex-col items-center justify-center flex-1 py-1 group select-none"
+              className="flex flex-col items-center justify-center flex-1 py-0.5 group select-none"
             >
               <div className="relative flex flex-col items-center">
                 <div className="relative">
-                  <Icon className={`w-5 h-5 transition-colors duration-200 ${active ? 'text-goldAccent' : 'text-textSecondary group-hover:text-textPrimary'}`} />
+                  <Icon className={`w-[18px] h-[18px] transition-colors duration-200 ${active ? 'text-goldAccent' : 'text-textSecondary group-hover:text-textPrimary'}`} />
                   {item.path === '/settings' && unreadByUser && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger animate-pulse ring-1 ring-bgMain" />
+                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-danger animate-pulse ring-1 ring-bgMain" />
                   )}
                 </div>
-                <span className={`text-[9px] font-extrabold uppercase tracking-widest mt-1.5 transition-colors duration-200 ${active ? 'text-goldAccent' : 'text-textSecondary group-hover:text-textPrimary'}`}>
+                <span className={`text-[10px] font-extrabold uppercase tracking-widest mt-1 transition-colors duration-200 ${active ? 'text-goldAccent' : 'text-textSecondary group-hover:text-textPrimary'}`}>
                   {item.name}
                 </span>
                 {active && (
-                  <span className="absolute -bottom-2 w-5 h-0.5 bg-goldAccent rounded-full shadow-[0_0_10px_#C9A84C]" />
+                  <span className="absolute -bottom-1.5 w-4 h-0.5 bg-goldAccent rounded-full shadow-[0_0_8px_#C9A84C]" />
                 )}
               </div>
             </NavLink>
@@ -311,16 +306,16 @@ export const UserLayout: React.FC = () => {
       </div>
 
       {/* Floating Action Button (FAB) for Support */}
-      <div className="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-40">
+      <div className="fixed bottom-20 right-4 md:bottom-8 md:right-8 z-40">
         <button
           onClick={() => navigate('/support')}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-surface border border-goldAccent/30 hover:border-goldAccent text-goldAccent hover:text-goldAccent shadow-[0_0_20px_rgba(201,168,76,0.15)] hover:shadow-[0_0_25px_rgba(201,168,76,0.25)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
+          className="relative flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full bg-surface border border-goldAccent/30 hover:border-goldAccent text-goldAccent hover:text-goldAccent shadow-[0_0_20px_rgba(201,168,76,0.15)] hover:shadow-[0_0_25px_rgba(201,168,76,0.25)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
           title="Contact Support"
         >
-          <MessageSquare className="w-6 h-6 transition-transform group-hover:rotate-6" />
+          <MessageSquare className="w-5 h-5 md:w-6 h-6 transition-transform group-hover:rotate-6" />
           {unreadByUser && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-danger animate-pulse ring-2 ring-surface">
-              <span className="h-1.5 w-1.5 rounded-full bg-bgMain" />
+            <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-danger animate-pulse ring-2 ring-surface">
+              <span className="h-1 w-1 rounded-full bg-bgMain" />
             </span>
           )}
         </button>
