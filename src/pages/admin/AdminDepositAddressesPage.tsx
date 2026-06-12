@@ -12,12 +12,21 @@ import { Loader } from '../../components/Loader';
 import { Modal } from '../../components/Modal';
 import { Plus, Edit2, Trash2, MapPin, Check } from 'lucide-react';
 
+const PRESET_OPTIONS = [
+  { id: 'btc', label: 'BTC', network: 'BTC', symbol: 'BTC', name: 'Bitcoin' },
+  { id: 'eth', label: 'ETH', network: 'ERC20', symbol: 'ETH', name: 'Ethereum' },
+  { id: 'usdt_trc20', label: 'USDT (TRC20)', network: 'TRC20', symbol: 'USDT', name: 'Tether' },
+  { id: 'usdt_bep20', label: 'USDT (BEP20)', network: 'BEP20', symbol: 'USDT', name: 'Tether' },
+  { id: 'sol', label: 'SOL', network: 'SOL', symbol: 'SOL', name: 'Solana' },
+];
+
 export const AdminDepositAddressesPage: React.FC = () => {
   const [addresses, setAddresses] = useState<DepositAddress[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Add Address Form States
   const [newLabel, setNewLabel] = useState('');
+  const [selectedPresetId, setSelectedPresetId] = useState('btc');
   const [newNetwork, setNewNetwork] = useState('BTC');
   const [newAddress, setNewAddress] = useState('');
   const [newActive, setNewActive] = useState(false);
@@ -27,6 +36,7 @@ export const AdminDepositAddressesPage: React.FC = () => {
 
   // Edit Address Modal States
   const [editingAddr, setEditingAddr] = useState<DepositAddress | null>(null);
+  const [selectedEditPresetId, setSelectedEditPresetId] = useState('btc');
   const [editLabel, setEditLabel] = useState('');
   const [editNetwork, setEditNetwork] = useState('');
   const [editAddress, setEditAddress] = useState('');
@@ -89,6 +99,8 @@ export const AdminDepositAddressesPage: React.FC = () => {
       setNewLabel('');
       setNewAddress('');
       setNewActive(false);
+      setSelectedPresetId('btc');
+      setNewNetwork('BTC');
       setNewPaymentAssetSymbol('BTC');
       setNewPaymentAssetName('Bitcoin');
       await fetchAddresses();
@@ -114,10 +126,22 @@ export const AdminDepositAddressesPage: React.FC = () => {
   const handleOpenEdit = (addr: DepositAddress) => {
     setEditingAddr(addr);
     setEditLabel(addr.label);
-    setEditNetwork(addr.network);
     setEditAddress(addr.address);
-    setEditPaymentAssetSymbol(addr.paymentAssetSymbol || '');
-    setEditPaymentAssetName(addr.paymentAssetName || '');
+    
+    const match = PRESET_OPTIONS.find(
+      (o) => o.network === addr.network && o.symbol === (addr.paymentAssetSymbol || '')
+    );
+    if (match) {
+      setSelectedEditPresetId(match.id);
+      setEditNetwork(match.network);
+      setEditPaymentAssetSymbol(match.symbol);
+      setEditPaymentAssetName(match.name);
+    } else {
+      setSelectedEditPresetId('btc');
+      setEditNetwork('BTC');
+      setEditPaymentAssetSymbol('BTC');
+      setEditPaymentAssetName('Bitcoin');
+    }
   };
 
   const handleUpdateAddress = async (e: React.FormEvent) => {
@@ -209,55 +233,29 @@ export const AdminDepositAddressesPage: React.FC = () => {
                     />
                   </div>
 
-                  {/* Network */}
+                  {/* Preset Asset Selector */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Network / Blockchain Protocol</label>
-                    <input
-                      type="text"
-                      list="networks"
-                      value={newNetwork}
-                      onChange={(e) => setNewNetwork(e.target.value)}
-                      placeholder="e.g. TRC20"
-                      required
+                    <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Select Asset / Network</label>
+                    <select
+                      value={selectedPresetId}
+                      onChange={(e) => {
+                        const presetId = e.target.value;
+                        setSelectedPresetId(presetId);
+                        const preset = PRESET_OPTIONS.find(o => o.id === presetId);
+                        if (preset) {
+                          setNewNetwork(preset.network);
+                          setNewPaymentAssetSymbol(preset.symbol);
+                          setNewPaymentAssetName(preset.name);
+                        }
+                      }}
                       className="w-full min-h-[38px] h-9 px-3 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
-                    />
-                    <datalist id="networks">
-                      <option value="BTC" />
-                      <option value="ERC20" />
-                      <option value="TRC20" />
-                      <option value="BEP20" />
-                      <option value="SOL" />
-                      <option value="Polygon" />
-                      <option value="Arbitrum" />
-                      <option value="Optimism" />
-                      <option value="Avalanche C-Chain" />
-                    </datalist>
-                  </div>
-
-                  {/* Payment Asset Symbol */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Payment Asset Symbol</label>
-                    <input
-                      type="text"
-                      value={newPaymentAssetSymbol}
-                      onChange={(e) => setNewPaymentAssetSymbol(e.target.value)}
-                      placeholder="e.g. USDT"
-                      required
-                      className="w-full min-h-[38px] h-9 px-3 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
-                    />
-                  </div>
-
-                  {/* Payment Asset Name */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Payment Asset Name</label>
-                    <input
-                      type="text"
-                      value={newPaymentAssetName}
-                      onChange={(e) => setNewPaymentAssetName(e.target.value)}
-                      placeholder="e.g. Tether"
-                      required
-                      className="w-full min-h-[38px] h-9 px-3 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
-                    />
+                    >
+                      {PRESET_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Address */}
@@ -411,52 +409,29 @@ export const AdminDepositAddressesPage: React.FC = () => {
               />
             </div>
 
-            {/* Network */}
+            {/* Preset Asset Selector */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Network / Blockchain Protocol</label>
-              <input
-                type="text"
-                list="edit-networks"
-                value={editNetwork}
-                onChange={(e) => setEditNetwork(e.target.value)}
-                required
+              <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Select Asset / Network</label>
+              <select
+                value={selectedEditPresetId}
+                onChange={(e) => {
+                  const presetId = e.target.value;
+                  setSelectedEditPresetId(presetId);
+                  const preset = PRESET_OPTIONS.find(o => o.id === presetId);
+                  if (preset) {
+                    setEditNetwork(preset.network);
+                    setEditPaymentAssetSymbol(preset.symbol);
+                    setEditPaymentAssetName(preset.name);
+                  }
+                }}
                 className="w-full min-h-[44px] h-11 px-4 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
-              />
-              <datalist id="edit-networks">
-                <option value="BTC" />
-                <option value="ERC20" />
-                <option value="TRC20" />
-                <option value="BEP20" />
-                <option value="SOL" />
-                <option value="Polygon" />
-                <option value="Arbitrum" />
-                <option value="Optimism" />
-                <option value="Avalanche C-Chain" />
-              </datalist>
-            </div>
-
-            {/* Payment Asset Symbol */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Payment Asset Symbol</label>
-              <input
-                type="text"
-                value={editPaymentAssetSymbol}
-                onChange={(e) => setEditPaymentAssetSymbol(e.target.value)}
-                required
-                className="w-full min-h-[44px] h-11 px-4 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
-              />
-            </div>
-
-            {/* Payment Asset Name */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Payment Asset Name</label>
-              <input
-                type="text"
-                value={editPaymentAssetName}
-                onChange={(e) => setEditPaymentAssetName(e.target.value)}
-                required
-                className="w-full min-h-[44px] h-11 px-4 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
-              />
+              >
+                {PRESET_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Address */}
