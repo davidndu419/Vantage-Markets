@@ -363,6 +363,7 @@ export const DashboardPage: React.FC = () => {
             <div className="flex flex-col gap-4">
               {filteredTransactions.slice(0, 4).map((tx) => {
                 const date = tx.createdAt instanceof Date ? tx.createdAt : (tx.createdAt as any).toDate();
+                const asset = assets.find((a) => a.id === tx.assetId || a.ticker === tx.ticker);
                 const statusMap = {
                   pending: 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20',
                   completed: 'bg-success/10 text-success border border-success/20',
@@ -370,10 +371,18 @@ export const DashboardPage: React.FC = () => {
                 };
                 return (
                   <Card key={tx.id} variant="standard" className="p-4 flex justify-between items-center bg-surface hover:border-gray-800">
-                    <div>
-                      <div className="text-xs font-bold text-textPrimary uppercase tracking-wider">{tx.assetName}</div>
-                      <div className="text-[9px] text-textSecondary font-mono uppercase mt-0.5">
-                        {tx.type} • {date.toLocaleDateString()}
+                    <div className="flex items-center gap-3">
+                      <AssetLogo
+                        name={tx.assetName}
+                        ticker={tx.ticker}
+                        logoUrl={asset?.logoUrl}
+                        className="h-8 w-8"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-textPrimary uppercase tracking-wider">{tx.assetName}</div>
+                        <div className="text-[9px] text-textSecondary font-mono uppercase mt-0.5">
+                          {tx.type} • {date.toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1.5">

@@ -9,6 +9,7 @@ import { Table } from '../components/Table';
 import type { Column } from '../components/Table';
 import { EmptyState } from '../components/EmptyState';
 import { Loader } from '../components/Loader';
+import { AssetLogo } from '../components/AssetLogo';
 import { History } from 'lucide-react';
 
 export const TransactionsPage: React.FC = () => {
@@ -61,17 +62,23 @@ export const TransactionsPage: React.FC = () => {
     {
       header: 'Asset / Security',
       key: 'assetName',
-      render: (row) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-borderCustom/45 text-goldAccent font-extrabold text-[10px] border border-borderCustom select-none">
-            {row.ticker.substring(0, 2)}
+      render: (row) => {
+        const asset = assets.find((a) => a.id === row.assetId || a.ticker === row.ticker);
+        return (
+          <div className="flex items-center gap-3">
+            <AssetLogo
+              name={row.assetName}
+              ticker={row.ticker}
+              logoUrl={asset?.logoUrl}
+              className="h-8 w-8"
+            />
+            <div>
+              <div className="text-textPrimary font-semibold text-xs sm:text-sm">{row.assetName}</div>
+              <div className="text-[9px] sm:text-[10px] text-textSecondary font-mono uppercase tracking-wider mt-0.5">{row.ticker}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-textPrimary font-semibold text-xs sm:text-sm">{row.assetName}</div>
-            <div className="text-[9px] sm:text-[10px] text-textSecondary font-mono uppercase tracking-wider mt-0.5">{row.ticker}</div>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       header: 'Operation Type',
