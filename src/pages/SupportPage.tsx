@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supportService } from '../services/supportService';
 import type { SupportMessage } from '../types';
 import { Button } from '../components/Button';
 import { Loader } from '../components/Loader';
-import { Send, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Send, MessageSquare, ShieldCheck, ArrowLeft } from 'lucide-react';
 
 export const SupportPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user, userProfile } = useAuth();
   
   const [messages, setMessages] = useState<SupportMessage[]>([]);
@@ -77,6 +79,13 @@ export const SupportPage: React.FC = () => {
           {/* Header info bar */}
           <div className="px-6 py-4 bg-bgMain/60 border-b border-borderCustom/60 flex items-center justify-between select-none">
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="mr-2 p-2 rounded-btn bg-borderCustom/40 border border-borderCustom hover:border-goldAccent text-textSecondary hover:text-goldAccent transition-all flex items-center justify-center cursor-pointer"
+                title="Go Back"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
               <div className="relative">
                 <div className="h-10 w-10 rounded-full bg-goldAccent/10 border border-goldAccent/30 flex items-center justify-center text-goldAccent">
                   <MessageSquare className="w-5 h-5" />

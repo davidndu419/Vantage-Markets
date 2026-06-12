@@ -133,9 +133,16 @@ export const TransactionsPage: React.FC = () => {
           declined: 'bg-danger/10 text-danger border border-danger/20',
         };
         return (
-          <span className={`text-[8px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-[4px] border ${statusMap[row.status] || ''}`}>
-            {row.status}
-          </span>
+          <div className="flex flex-col gap-1 items-start">
+            <span className={`text-[8px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-[4px] border ${statusMap[row.status] || ''}`}>
+              {row.status}
+            </span>
+            {row.status === 'declined' && (
+              <span className="text-[9px] font-bold text-danger uppercase tracking-wider block mt-0.5 whitespace-nowrap">
+                CONTACT SUPPORT
+              </span>
+            )}
+          </div>
         );
       },
     },

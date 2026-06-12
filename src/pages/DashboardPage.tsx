@@ -392,6 +392,11 @@ export const DashboardPage: React.FC = () => {
                       <span className={`text-[8px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-[4px] ${statusMap[tx.status]}`}>
                         {tx.status}
                       </span>
+                      {tx.status === 'declined' && (
+                        <span className="text-[8px] font-bold text-danger uppercase tracking-wider block mt-0.5 whitespace-nowrap">
+                          CONTACT SUPPORT
+                        </span>
+                      )}
                     </div>
                   </Card>
                 );
