@@ -301,8 +301,8 @@ export const SettingsPage: React.FC = () => {
                 <h2 className="text-sm font-bold uppercase tracking-wider text-textPrimary">Support Hub</h2>
               </div>
               {unreadByUser && (
-                <span className="px-2.5 py-0.5 rounded-[4px] bg-danger text-bgMain text-[8px] font-extrabold uppercase tracking-widest animate-pulse">
-                  Unread
+                <span className="px-2 py-0.5 rounded bg-danger/10 border border-danger/20 text-danger text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                  <span className="text-[10px] text-danger leading-none">●</span> New Message
                 </span>
               )}
             </div>

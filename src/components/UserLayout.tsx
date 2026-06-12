@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import type { SupportChat } from '../types';
 import {
   Home,
   Briefcase,
@@ -11,10 +12,29 @@ import {
   History,
   Settings,
   Bell,
-  User,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  MessageSquare
 } from 'lucide-react';
+
+const formatRelativeTime = (date: Date | null): string => {
+  if (!date) return '';
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins === 1) return '1 minute ago';
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours === 1) return '1 hour ago';
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
+};
 
 export const UserLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -23,11 +43,17 @@ export const UserLayout: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [unreadByUser, setUnreadByUser] = useState(false);
+  const [notiDropdownOpen, setNotiDropdownOpen] = useState(false);
+  const [chatData, setChatData] = useState<SupportChat | null>(null);
+  const notiRef = useRef<HTMLDivElement>(null);
 
   // Subscribe to user's support chat unread status
   useEffect(() => {
     if (!user) {
-      Promise.resolve().then(() => setUnreadByUser(false));
+      Promise.resolve().then(() => {
+        setUnreadByUser(false);
+        setChatData(null);
+      });
       return;
     }
     const chatDocRef = doc(db, 'supportChats', user.uid);
@@ -37,8 +63,10 @@ export const UserLayout: React.FC = () => {
         if (snapshot.exists()) {
           const data = snapshot.data();
           setUnreadByUser(!!data.unreadByUser);
+          setChatData({ id: snapshot.id, ...data } as SupportChat);
         } else {
           setUnreadByUser(false);
+          setChatData(null);
         }
       },
       (err) => {
@@ -53,6 +81,9 @@ export const UserLayout: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
+      }
+      if (notiRef.current && !notiRef.current.contains(event.target as Node)) {
+        setNotiDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -126,11 +157,67 @@ export const UserLayout: React.FC = () => {
 
           {/* Right Side Icons & Profile Dropdown */}
           <div className="flex items-center gap-4">
-            {/* Notification bell */}
-            <button className="text-textSecondary hover:text-goldAccent transition-colors relative p-1 cursor-pointer">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-goldAccent ring-2 ring-bgMain" />
-            </button>
+            {/* Notification Center */}
+            <div className="relative" ref={notiRef}>
+              <button
+                onClick={() => setNotiDropdownOpen(!notiDropdownOpen)}
+                className="text-textSecondary hover:text-goldAccent transition-colors relative p-1 cursor-pointer focus:outline-none"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadByUser && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger animate-pulse ring-2 ring-bgMain" />
+                )}
+              </button>
+
+              {/* Notification Dropdown Menu */}
+              {notiDropdownOpen && (
+                <div className="absolute right-0 mt-3 w-80 bg-surface border border-borderCustom rounded-btn shadow-2xl py-3 z-50 animate-fadeIn glassmorphism">
+                  <div className="px-4 pb-2 border-b border-borderCustom/60 flex items-center justify-between">
+                    <span className="text-[10px] text-textSecondary font-bold uppercase tracking-wider">Notifications</span>
+                    {unreadByUser && (
+                      <span className="text-[8px] font-bold text-danger bg-danger/10 border border-danger/20 px-1.5 py-0.5 rounded uppercase tracking-wider animate-pulse flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-danger" /> New
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto py-1">
+                    {unreadByUser && chatData ? (
+                      <div className="px-4 py-3 hover:bg-borderCustom/20 transition-colors flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-textPrimary">New Support Message</span>
+                          <span className="text-[8px] text-textSecondary font-mono">
+                            {formatRelativeTime(
+                              chatData.lastMessageAt
+                                ? typeof (chatData.lastMessageAt as unknown as { toDate: () => Date }).toDate === 'function'
+                                  ? (chatData.lastMessageAt as unknown as { toDate: () => Date }).toDate()
+                                  : (chatData.lastMessageAt as Date)
+                                : null
+                            )}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-textSecondary line-clamp-2 italic">
+                          "{chatData.lastMessage || 'We have sent you a message.'}"
+                        </p>
+                        <button
+                          onClick={() => {
+                            setNotiDropdownOpen(false);
+                            navigate('/support');
+                          }}
+                          className="mt-1 text-[9px] font-extrabold uppercase tracking-widest text-goldAccent hover:text-goldAccent/80 transition-colors flex items-center gap-1 self-start cursor-pointer"
+                        >
+                          Open Support &rarr;
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="px-4 py-6 text-center text-[10px] uppercase tracking-wider text-textSecondary select-none">
+                        No new notifications
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Profile Dropdown Trigger */}
             <div className="relative" ref={dropdownRef}>
@@ -163,25 +250,13 @@ export const UserLayout: React.FC = () => {
                     <button
                       onClick={() => {
                         setDropdownOpen(false);
-                        navigate('/settings');
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold text-textSecondary hover:text-textPrimary hover:bg-borderCustom/40 transition-colors uppercase tracking-wider text-left cursor-pointer"
-                    >
-                      <User className="w-4 h-4 text-goldAccent" />
-                      Profile Settings
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        setDropdownOpen(false);
                         navigate('/support');
                       }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold text-textSecondary hover:text-textPrimary hover:bg-borderCustom/40 transition-colors uppercase tracking-wider text-left cursor-pointer"
                     >
-                      <Bell className="w-4 h-4 text-goldAccent" />
+                      <MessageSquare className="w-4 h-4 text-goldAccent" />
                       Contact Support
                     </button>
-
                   </div>
 
                   <div className="border-t border-borderCustom/60 pt-1">
@@ -233,6 +308,22 @@ export const UserLayout: React.FC = () => {
             </NavLink>
           );
         })}
+      </div>
+
+      {/* Floating Action Button (FAB) for Support */}
+      <div className="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-40">
+        <button
+          onClick={() => navigate('/support')}
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-surface border border-goldAccent/30 hover:border-goldAccent text-goldAccent hover:text-goldAccent shadow-[0_0_20px_rgba(201,168,76,0.15)] hover:shadow-[0_0_25px_rgba(201,168,76,0.25)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer group"
+          title="Contact Support"
+        >
+          <MessageSquare className="w-6 h-6 transition-transform group-hover:rotate-6" />
+          {unreadByUser && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-danger animate-pulse ring-2 ring-surface">
+              <span className="h-1.5 w-1.5 rounded-full bg-bgMain" />
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );
