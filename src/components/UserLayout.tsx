@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import {
   Home,
   Briefcase,
@@ -20,6 +22,31 @@ export const UserLayout: React.FC = () => {
   const { user, userProfile } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [unreadByUser, setUnreadByUser] = useState(false);
+
+  // Subscribe to user's support chat unread status
+  useEffect(() => {
+    if (!user) {
+      Promise.resolve().then(() => setUnreadByUser(false));
+      return;
+    }
+    const chatDocRef = doc(db, 'supportChats', user.uid);
+    const unsub = onSnapshot(
+      chatDocRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setUnreadByUser(!!data.unreadByUser);
+        } else {
+          setUnreadByUser(false);
+        }
+      },
+      (err) => {
+        console.error('Error listening to user support chat status:', err);
+      }
+    );
+    return () => unsub();
+  }, [user]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -81,7 +108,7 @@ export const UserLayout: React.FC = () => {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-btn text-xs font-bold uppercase tracking-wider transition-all duration-200 border ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-btn text-xs font-bold uppercase tracking-wider transition-all duration-200 border relative ${
                     active
                       ? 'bg-goldAccent/10 border-goldAccent/30 text-goldAccent shadow-[0_0_15px_rgba(201,168,76,0.03)]'
                       : 'border-transparent text-textSecondary hover:text-textPrimary hover:bg-borderCustom/40'
@@ -89,6 +116,9 @@ export const UserLayout: React.FC = () => {
                 >
                   <Icon className="w-4 h-4" />
                   {item.name}
+                  {item.path === '/settings' && unreadByUser && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger animate-pulse ring-1 ring-bgMain" />
+                  )}
                 </NavLink>
               );
             })}
@@ -187,7 +217,12 @@ export const UserLayout: React.FC = () => {
               className="flex flex-col items-center justify-center flex-1 py-1 group select-none"
             >
               <div className="relative flex flex-col items-center">
-                <Icon className={`w-5 h-5 transition-colors duration-200 ${active ? 'text-goldAccent' : 'text-textSecondary group-hover:text-textPrimary'}`} />
+                <div className="relative">
+                  <Icon className={`w-5 h-5 transition-colors duration-200 ${active ? 'text-goldAccent' : 'text-textSecondary group-hover:text-textPrimary'}`} />
+                  {item.path === '/settings' && unreadByUser && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger animate-pulse ring-1 ring-bgMain" />
+                  )}
+                </div>
                 <span className={`text-[9px] font-extrabold uppercase tracking-widest mt-1.5 transition-colors duration-200 ${active ? 'text-goldAccent' : 'text-textSecondary group-hover:text-textPrimary'}`}>
                   {item.name}
                 </span>

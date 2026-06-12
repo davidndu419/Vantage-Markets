@@ -28,7 +28,15 @@ interface ActiveAddress {
   network: string;
   address: string;
   qrCodeUrl?: string;
+  paymentAssetSymbol?: string;
+  paymentAssetName?: string;
 }
+
+const getPaymentAssetDetails = (addr: ActiveAddress) => {
+  const symbol = addr.paymentAssetSymbol || (addr.network === 'BTC' ? 'BTC' : 'USDT');
+  const name = addr.paymentAssetName || (addr.network === 'BTC' ? 'Bitcoin' : 'Tether');
+  return { symbol, name };
+};
 
 export const DepositDetailsPage: React.FC = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -49,6 +57,8 @@ export const DepositDetailsPage: React.FC = () => {
 
   // Wallet address data
   const [activeAddresses, setActiveAddresses] = useState<ActiveAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [pricesMap, setPricesMap] = useState<Record<string, number>>({});
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [submittingTx, setSubmittingTx] = useState(false);
 
@@ -77,8 +87,9 @@ export const DepositDetailsPage: React.FC = () => {
         setCurrentPrice(initialPrice);
 
         // Listen to price updates
-        unsubPrices = priceService.onPricesChange((pricesMap) => {
-          const price = pricesMap[fetchedAsset.ticker];
+        unsubPrices = priceService.onPricesChange((prices) => {
+          setPricesMap(prices);
+          const price = prices[fetchedAsset.ticker];
           if (price !== undefined) {
             setCurrentPrice(price);
           }
@@ -117,6 +128,8 @@ export const DepositDetailsPage: React.FC = () => {
             network: data.network || '',
             address: data.address || '',
             qrCodeUrl: data.qrCodeUrl || '',
+            paymentAssetSymbol: data.paymentAssetSymbol,
+            paymentAssetName: data.paymentAssetName,
           });
         });
         
@@ -131,31 +144,27 @@ export const DepositDetailsPage: React.FC = () => {
     fetchAddresses();
   }, []);
 
-  // Compute selectedAddress dynamically during render
-  const selectedAddress = (() => {
-    if (!asset || activeAddresses.length === 0) return null;
-
-    // Attempt matching by ticker/network label
-    let match = activeAddresses.find(
-      (addr) => addr.network.toLowerCase() === asset.ticker.toLowerCase()
-    );
-
-    if (!match && asset.type === 'crypto') {
-      // General fallbacks (e.g. ERC20 for Ethereum-based or ETH)
-      if (asset.ticker === 'ETH') {
+  // 3. Resolve default selected address ID once loaded
+  useEffect(() => {
+    if (activeAddresses.length > 0 && !selectedAddressId) {
+      let match = activeAddresses.find(
+        (addr) => addr.network.toLowerCase() === asset?.ticker?.toLowerCase()
+      );
+      if (!match && asset?.type === 'crypto' && asset.ticker === 'ETH') {
         match = activeAddresses.find((addr) => addr.network.toUpperCase() === 'ERC20');
       }
+      if (!match && asset?.type === 'stock') {
+        match = activeAddresses.find(
+          (addr) => addr.network.toUpperCase() === 'TRC20' || addr.network.toUpperCase() === 'ERC20'
+        );
+      }
+      const chosen = match || activeAddresses[0];
+      Promise.resolve().then(() => setSelectedAddressId(chosen.id));
     }
-    
-    if (!match && asset.type === 'stock') {
-      // Stocks default to USD wire or TRC20/ERC20 dollar tokens
-      match = activeAddresses.find(
-        (addr) => addr.network.toUpperCase() === 'TRC20' || addr.network.toUpperCase() === 'ERC20'
-      );
-    }
+  }, [activeAddresses, asset, selectedAddressId]);
 
-    return match || activeAddresses[0] || null;
-  })();
+  // Resolve selected address dynamically
+  const selectedAddress = activeAddresses.find((addr) => addr.id === selectedAddressId) || null;
 
   // Calculate units dynamically
   const amount = parseFloat(amountStr) || 0;
@@ -201,6 +210,15 @@ export const DepositDetailsPage: React.FC = () => {
   const handleSubmitPayment = async () => {
     if (!user || !asset || !selectedAddress) return;
 
+    const { symbol: paymentAssetSymbol, name: paymentAssetName } = getPaymentAssetDetails(selectedAddress);
+    const paymentPriceAtTime = pricesMap[paymentAssetSymbol];
+    if (paymentPriceAtTime === undefined || paymentPriceAtTime <= 0) {
+      setValidationError(`Real-time price mapping for ${paymentAssetSymbol} is missing.`);
+      return;
+    }
+
+    const paymentQuantity = amount / paymentPriceAtTime;
+
     setSubmittingTx(true);
     try {
       // Create pending transaction in service layer
@@ -214,6 +232,12 @@ export const DepositDetailsPage: React.FC = () => {
         quantity: calculatedQuantity,
         status: 'pending',
         visibleToUser: true,
+        paymentAssetSymbol,
+        paymentAssetName,
+        paymentNetwork: selectedAddress.network,
+        paymentAddress: selectedAddress.address,
+        paymentQuantity,
+        paymentPriceAtTime,
       });
 
       // Navigate to ledger
@@ -380,23 +404,166 @@ export const DepositDetailsPage: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Amount Review */}
-                <div className="grid grid-cols-2 p-3 bg-bgMain rounded-lg border border-borderCustom/60 select-none">
-                  <div>
-                    <span className="text-[9px] text-textSecondary uppercase tracking-wider block">Target Value</span>
-                    <span className="text-sm font-bold font-mono text-textPrimary">${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[9px] text-textSecondary uppercase tracking-wider block">Transfer Quantity</span>
-                    <span className="text-sm font-bold font-mono text-goldAccent">
-                      {calculatedQuantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} {asset.ticker}
+                {/* Selector for payment options */}
+                {activeAddresses.length > 0 && (
+                  <div className="flex flex-col gap-2.5">
+                    <span className="text-[9px] text-textSecondary uppercase tracking-widest font-extrabold block">
+                      Choose Funding Payment Method
                     </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {activeAddresses.map((addr) => {
+                        const { symbol, name } = getPaymentAssetDetails(addr);
+                        const isChosen = addr.id === selectedAddressId;
+                        return (
+                          <div
+                            key={addr.id}
+                            onClick={() => {
+                              setSelectedAddressId(addr.id);
+                              setValidationError(null);
+                            }}
+                            className={`cursor-pointer p-3 rounded-[8px] border transition-all duration-300 flex items-center justify-between ${
+                              isChosen
+                                ? 'border-goldAccent bg-goldAccent/5 text-goldAccent'
+                                : 'border-borderCustom hover:border-textSecondary bg-bgMain/40 text-textSecondary hover:text-textPrimary'
+                            }`}
+                          >
+                            <div>
+                              <span className="text-xs font-bold uppercase block">{name} ({symbol})</span>
+                              <span className="text-[9px] font-semibold text-textSecondary mt-0.5 block">{addr.network} • {addr.label}</span>
+                            </div>
+                            {isChosen && (
+                              <span className="h-2 w-2 rounded-full bg-goldAccent shadow-[0_0_8px_#C9A84C]" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {loadingAddresses ? (
-                  <Loader variant="skeleton" count={2} />
-                ) : !selectedAddress ? (
+                {/* Amount Review */}
+                {selectedAddress && (() => {
+                  const { symbol: paymentAssetSymbol } = getPaymentAssetDetails(selectedAddress);
+                  const paymentPrice = pricesMap[paymentAssetSymbol];
+                  const hasPaymentPrice = paymentPrice !== undefined && paymentPrice > 0;
+                  const paymentQuantity = hasPaymentPrice ? amount / paymentPrice : 0;
+
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 p-3 bg-bgMain rounded-lg border border-borderCustom/60 select-none">
+                        <div>
+                          <span className="text-[9px] text-textSecondary uppercase tracking-wider block">Target Value</span>
+                          <span className="text-sm font-bold font-mono text-textPrimary">${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9px] text-textSecondary uppercase tracking-wider block">Transfer Quantity</span>
+                          <span className="text-sm font-bold font-mono text-goldAccent">
+                            {hasPaymentPrice ? (
+                              `${paymentQuantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} ${paymentAssetSymbol}`
+                            ) : (
+                              <span className="text-danger">Price Missing</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      {validationError && (
+                        <div className="p-4 rounded-lg bg-danger/10 border border-danger/25 text-xs text-danger font-semibold tracking-wide flex items-center gap-2.5 animate-fadeIn">
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          <span>{validationError}</span>
+                        </div>
+                      )}
+
+                      {loadingAddresses ? (
+                        <Loader variant="skeleton" count={2} />
+                      ) : !hasPaymentPrice ? (
+                        <div className="p-5 rounded-lg border border-danger/20 bg-danger/5 text-center flex flex-col items-center gap-2.5">
+                          <AlertCircle className="w-8 h-8 text-danger" />
+                          <div className="text-xs font-bold text-textPrimary uppercase">Rate Currently Unavailable</div>
+                          <p className="text-[10px] text-textSecondary leading-relaxed max-w-xs">
+                            The live rate for {paymentAssetSymbol} is currently missing from our database system. Please select another funding option or contact support.
+                          </p>
+                        </div>
+                      ) : (
+                        /* Normal Address Display */
+                        <div className="flex flex-col gap-5">
+                          
+                          {/* QR Code and details block */}
+                          <div className="flex flex-col sm:flex-row gap-5 items-center bg-bgMain p-4 rounded-lg border border-borderCustom/80">
+                            
+                            {/* Render QR code */}
+                            <div className="bg-white p-2 rounded-lg shrink-0 border border-white/10 select-none shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+                              <QRCodeSVG value={selectedAddress.address} size={110} />
+                            </div>
+
+                            <div className="flex flex-col gap-3 w-full text-center sm:text-left">
+                              <div>
+                                <span className="text-[9px] text-textSecondary uppercase tracking-widest block font-bold">Funding Network</span>
+                                <span className="text-xs font-extrabold text-goldAccent uppercase flex items-center justify-center sm:justify-start gap-1 mt-0.5 select-none">
+                                  <Globe className="w-3.5 h-3.5" /> {selectedAddress.network} ({selectedAddress.label})
+                                </span>
+                              </div>
+                              
+                              <div>
+                                <span className="text-[9px] text-textSecondary uppercase tracking-widest block font-bold mb-1">Secured Wallet Address</span>
+                                <div className="flex items-center bg-surface border border-borderCustom rounded-[6px] p-2 pr-1 gap-2">
+                                  <span className="text-[10px] font-mono text-textPrimary break-all flex-1 text-left">
+                                    {selectedAddress.address}
+                                  </span>
+                                  <button
+                                    onClick={handleCopy}
+                                    className="h-7 w-7 rounded bg-borderCustom hover:bg-goldAccent hover:text-bgMain flex items-center justify-center transition-colors shrink-0 relative group"
+                                    title="Copy to Clipboard"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                    {copyFeedback && (
+                                      <span className="absolute bottom-full mb-2 bg-goldAccent text-bgMain text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(201,168,76,0.3)] select-none">
+                                        Copied!
+                                      </span>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Deposit Instructions text */}
+                          <div className="p-4 rounded-lg bg-borderCustom/15 border border-borderCustom/50 text-[10px] text-textSecondary leading-relaxed">
+                            <span className="font-bold text-textPrimary uppercase tracking-wider block mb-1">Funding Instructions</span>
+                            * Send exactly <span className="font-mono text-goldAccent font-bold">{paymentQuantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} {paymentAssetSymbol}</span> in a single transfer.
+                            <br />
+                            * Ensure you use the correct <span className="font-bold text-goldAccent uppercase">{selectedAddress.network}</span> network. Failure to do so will result in permanent capital loss.
+                            <br />
+                            * After your wallet transaction clears, click the confirmation button below to record the intent statement.
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex gap-4">
+                            <Button
+                              variant="secondary"
+                              className="flex-1 text-xs font-bold uppercase tracking-wider h-11 border border-borderCustom"
+                              onClick={() => setIsConfirmed(false)}
+                              disabled={submittingTx}
+                            >
+                              Adjust Amount
+                            </Button>
+                            <Button
+                              variant="primary"
+                              className="flex-1 text-xs font-extrabold uppercase tracking-widest h-11 shadow-[0_0_15px_rgba(201,168,76,0.2)]"
+                              onClick={handleSubmitPayment}
+                              isLoading={submittingTx}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1.5" /> I Have Made Payment
+                            </Button>
+                          </div>
+
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+
+                {loadingAddresses ? null : !selectedAddress ? (
                   /* Fallback display if no active address is configured */
                   <div className="p-5 rounded-lg border border-yellow-500/20 bg-yellow-500/5 text-center flex flex-col items-center gap-2.5">
                     <AlertCircle className="w-8 h-8 text-yellow-500" />
@@ -412,81 +579,7 @@ export const DepositDetailsPage: React.FC = () => {
                       Return to Dashboard
                     </Button>
                   </div>
-                ) : (
-                  /* Normal Address Display */
-                  <div className="flex flex-col gap-5">
-                    
-                    {/* QR Code and details block */}
-                    <div className="flex flex-col sm:flex-row gap-5 items-center bg-bgMain p-4 rounded-lg border border-borderCustom/80">
-                      
-                      {/* Render QR code */}
-                      <div className="bg-white p-2 rounded-lg shrink-0 border border-white/10 select-none shadow-[0_0_15px_rgba(255,255,255,0.05)]">
-                        <QRCodeSVG value={selectedAddress.address} size={110} />
-                      </div>
-
-                      <div className="flex flex-col gap-3 w-full text-center sm:text-left">
-                        <div>
-                          <span className="text-[9px] text-textSecondary uppercase tracking-widest block font-bold">Funding Network</span>
-                          <span className="text-xs font-extrabold text-goldAccent uppercase flex items-center justify-center sm:justify-start gap-1 mt-0.5 select-none">
-                            <Globe className="w-3.5 h-3.5" /> {selectedAddress.network} ({selectedAddress.label})
-                          </span>
-                        </div>
-                        
-                        <div>
-                          <span className="text-[9px] text-textSecondary uppercase tracking-widest block font-bold mb-1">Secured Wallet Address</span>
-                          <div className="flex items-center bg-surface border border-borderCustom rounded-[6px] p-2 pr-1 gap-2">
-                            <span className="text-[10px] font-mono text-textPrimary break-all flex-1 text-left">
-                              {selectedAddress.address}
-                            </span>
-                            <button
-                              onClick={handleCopy}
-                              className="h-7 w-7 rounded bg-borderCustom hover:bg-goldAccent hover:text-bgMain flex items-center justify-center transition-colors shrink-0 relative group"
-                              title="Copy to Clipboard"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                              {copyFeedback && (
-                                <span className="absolute bottom-full mb-2 bg-goldAccent text-bgMain text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(201,168,76,0.3)] select-none">
-                                  Copied!
-                                </span>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Deposit Instructions text */}
-                    <div className="p-4 rounded-lg bg-borderCustom/15 border border-borderCustom/50 text-[10px] text-textSecondary leading-relaxed">
-                      <span className="font-bold text-textPrimary uppercase tracking-wider block mb-1">Funding Instructions</span>
-                      * Send exactly <span className="font-mono text-goldAccent font-bold">{calculatedQuantity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} {asset.ticker}</span> in a single transfer.
-                      <br />
-                      * Ensure you use the correct <span className="font-bold text-goldAccent uppercase">{selectedAddress.network}</span> network. Failure to do so will result in permanent capital loss.
-                      <br />
-                      * After your wallet transaction clears, click the confirmation button below to record the intent statement.
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-4">
-                      <Button
-                        variant="secondary"
-                        className="flex-1 text-xs font-bold uppercase tracking-wider h-11 border border-borderCustom"
-                        onClick={() => setIsConfirmed(false)}
-                        disabled={submittingTx}
-                      >
-                        Adjust Amount
-                      </Button>
-                      <Button
-                        variant="primary"
-                        className="flex-1 text-xs font-extrabold uppercase tracking-widest h-11 shadow-[0_0_15px_rgba(201,168,76,0.2)]"
-                        onClick={handleSubmitPayment}
-                        isLoading={submittingTx}
-                      >
-                        <CheckCircle className="w-4 h-4 mr-1.5" /> I Have Made Payment
-                      </Button>
-                    </div>
-
-                  </div>
-                )}
+                ) : null}
               </Card>
             )}
 

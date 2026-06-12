@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useMarketMode } from '../contexts/MarketModeContext';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import {
@@ -29,6 +31,31 @@ export const SettingsPage: React.FC = () => {
   const [resetSent, setResetSent] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
+  const [unreadByUser, setUnreadByUser] = useState(false);
+
+  // Subscribe to user's support chat unread status
+  useEffect(() => {
+    if (!user) {
+      Promise.resolve().then(() => setUnreadByUser(false));
+      return;
+    }
+    const chatDocRef = doc(db, 'supportChats', user.uid);
+    const unsub = onSnapshot(
+      chatDocRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setUnreadByUser(!!data.unreadByUser);
+        } else {
+          setUnreadByUser(false);
+        }
+      },
+      (err) => {
+        console.error('Error listening to support chat status in settings:', err);
+      }
+    );
+    return () => unsub();
+  }, [user]);
 
   const getJoinDate = () => {
     if (!userProfile?.createdAt) return 'N/A';
@@ -268,9 +295,16 @@ export const SettingsPage: React.FC = () => {
 
           {/* HELP & SUPPORT */}
           <Card variant="standard" className="border border-borderCustom/60">
-            <div className="flex items-center gap-3 border-b border-borderCustom/40 pb-4 mb-4">
-              <MessageSquare className="w-5 h-5 text-goldAccent" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-textPrimary">Support Hub</h2>
+            <div className="flex items-center justify-between border-b border-borderCustom/40 pb-4 mb-4">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-5 h-5 text-goldAccent" />
+                <h2 className="text-sm font-bold uppercase tracking-wider text-textPrimary">Support Hub</h2>
+              </div>
+              {unreadByUser && (
+                <span className="px-2.5 py-0.5 rounded-[4px] bg-danger text-bgMain text-[8px] font-extrabold uppercase tracking-widest animate-pulse">
+                  Unread
+                </span>
+              )}
             </div>
             
             <p className="text-[11px] text-textSecondary font-medium leading-relaxed mb-5">

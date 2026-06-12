@@ -65,6 +65,9 @@ export const AdminTransactionsPage: React.FC = () => {
       txs.forEach((tx) => {
         const u = usersMap[tx.userId];
         const date = tx.createdAt instanceof Date ? tx.createdAt : (tx.createdAt as any)?.toDate?.() || new Date();
+        const description = tx.type === 'deposit' && tx.paymentAssetSymbol
+          ? `Deposit via ${tx.paymentQuantity?.toFixed(4)} ${tx.paymentAssetSymbol} (${tx.paymentNetwork})`
+          : `${tx.type.toUpperCase()} request`;
         combined.push({
           id: tx.id,
           userId: tx.userId,
@@ -76,7 +79,7 @@ export const AdminTransactionsPage: React.FC = () => {
           amount: tx.amount,
           status: tx.status,
           createdAt: date,
-          description: `${tx.type.toUpperCase()} request`,
+          description,
         });
       });
 

@@ -124,6 +124,8 @@ export const AdminSupportPage: React.FC = () => {
                     className={`p-4 flex items-start justify-between gap-3 cursor-pointer select-none transition-all duration-200 border-l-2 ${
                       isSelected
                         ? 'bg-goldAccent/5 border-goldAccent border-l-2'
+                        : chat.unreadByAdmin
+                        ? 'bg-danger/5 border-danger/30 border-l-2'
                         : 'border-transparent bg-transparent hover:bg-bgMain/20'
                     }`}
                   >

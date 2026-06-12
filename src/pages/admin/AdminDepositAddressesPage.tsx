@@ -21,6 +21,8 @@ export const AdminDepositAddressesPage: React.FC = () => {
   const [newNetwork, setNewNetwork] = useState('BTC');
   const [newAddress, setNewAddress] = useState('');
   const [newActive, setNewActive] = useState(false);
+  const [newPaymentAssetSymbol, setNewPaymentAssetSymbol] = useState('BTC');
+  const [newPaymentAssetName, setNewPaymentAssetName] = useState('Bitcoin');
   const [submittingAdd, setSubmittingAdd] = useState(false);
 
   // Edit Address Modal States
@@ -28,6 +30,8 @@ export const AdminDepositAddressesPage: React.FC = () => {
   const [editLabel, setEditLabel] = useState('');
   const [editNetwork, setEditNetwork] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [editPaymentAssetSymbol, setEditPaymentAssetSymbol] = useState('');
+  const [editPaymentAssetName, setEditPaymentAssetName] = useState('');
   const [submittingEdit, setSubmittingEdit] = useState(false);
 
   const [togglingActiveId, setTogglingActiveId] = useState<string | null>(null);
@@ -59,8 +63,10 @@ export const AdminDepositAddressesPage: React.FC = () => {
     const labelStr = newLabel.trim();
     const networkStr = newNetwork.trim().toUpperCase();
     const addressStr = newAddress.trim();
+    const assetSymbolStr = newPaymentAssetSymbol.trim().toUpperCase();
+    const assetNameStr = newPaymentAssetName.trim();
 
-    if (!labelStr || !networkStr || !addressStr) {
+    if (!labelStr || !networkStr || !addressStr || !assetSymbolStr || !assetNameStr) {
       alert('Please fill out all address fields.');
       return;
     }
@@ -75,12 +81,16 @@ export const AdminDepositAddressesPage: React.FC = () => {
         address: addressStr,
         qrCodeUrl,
         active: newActive,
+        paymentAssetSymbol: assetSymbolStr,
+        paymentAssetName: assetNameStr,
       });
 
       alert('Deposit address added successfully.');
       setNewLabel('');
       setNewAddress('');
       setNewActive(false);
+      setNewPaymentAssetSymbol('BTC');
+      setNewPaymentAssetName('Bitcoin');
       await fetchAddresses();
     } catch (err: any) {
       alert(err.message || 'Failed to add deposit address.');
@@ -106,6 +116,8 @@ export const AdminDepositAddressesPage: React.FC = () => {
     setEditLabel(addr.label);
     setEditNetwork(addr.network);
     setEditAddress(addr.address);
+    setEditPaymentAssetSymbol(addr.paymentAssetSymbol || '');
+    setEditPaymentAssetName(addr.paymentAssetName || '');
   };
 
   const handleUpdateAddress = async (e: React.FormEvent) => {
@@ -115,8 +127,10 @@ export const AdminDepositAddressesPage: React.FC = () => {
     const labelStr = editLabel.trim();
     const networkStr = editNetwork.trim().toUpperCase();
     const addressStr = editAddress.trim();
+    const assetSymbolStr = editPaymentAssetSymbol.trim().toUpperCase();
+    const assetNameStr = editPaymentAssetName.trim();
 
-    if (!labelStr || !networkStr || !addressStr) {
+    if (!labelStr || !networkStr || !addressStr || !assetSymbolStr || !assetNameStr) {
       alert('Fields cannot be empty.');
       return;
     }
@@ -129,6 +143,8 @@ export const AdminDepositAddressesPage: React.FC = () => {
         network: networkStr,
         address: addressStr,
         qrCodeUrl,
+        paymentAssetSymbol: assetSymbolStr,
+        paymentAssetName: assetNameStr,
       });
       alert('Deposit address updated successfully.');
       setEditingAddr(null);
@@ -196,16 +212,52 @@ export const AdminDepositAddressesPage: React.FC = () => {
                   {/* Network */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Network / Blockchain Protocol</label>
-                    <select
+                    <input
+                      type="text"
+                      list="networks"
                       value={newNetwork}
                       onChange={(e) => setNewNetwork(e.target.value)}
+                      placeholder="e.g. TRC20"
+                      required
                       className="w-full min-h-[38px] h-9 px-3 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
-                    >
-                      <option value="BTC">BTC (Bitcoin)</option>
-                      <option value="ERC20">ERC20 (Ethereum Network)</option>
-                      <option value="SOL">SOL (Solana)</option>
-                      <option value="TRC20">TRC20 (Tron / USDT)</option>
-                    </select>
+                    />
+                    <datalist id="networks">
+                      <option value="BTC" />
+                      <option value="ERC20" />
+                      <option value="TRC20" />
+                      <option value="BEP20" />
+                      <option value="SOL" />
+                      <option value="Polygon" />
+                      <option value="Arbitrum" />
+                      <option value="Optimism" />
+                      <option value="Avalanche C-Chain" />
+                    </datalist>
+                  </div>
+
+                  {/* Payment Asset Symbol */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Payment Asset Symbol</label>
+                    <input
+                      type="text"
+                      value={newPaymentAssetSymbol}
+                      onChange={(e) => setNewPaymentAssetSymbol(e.target.value)}
+                      placeholder="e.g. USDT"
+                      required
+                      className="w-full min-h-[38px] h-9 px-3 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
+                    />
+                  </div>
+
+                  {/* Payment Asset Name */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Payment Asset Name</label>
+                    <input
+                      type="text"
+                      value={newPaymentAssetName}
+                      onChange={(e) => setNewPaymentAssetName(e.target.value)}
+                      placeholder="e.g. Tether"
+                      required
+                      className="w-full min-h-[38px] h-9 px-3 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
+                    />
                   </div>
 
                   {/* Address */}
@@ -263,6 +315,9 @@ export const AdminDepositAddressesPage: React.FC = () => {
                 render: (row) => (
                   <div>
                     <span className="font-bold text-xs text-textPrimary block">{row.label}</span>
+                    <span className="text-[10px] text-goldAccent font-bold block mt-0.5">
+                      Asset: {row.paymentAssetName || (row.network === 'BTC' ? 'Bitcoin' : 'Tether')} ({row.paymentAssetSymbol || (row.network === 'BTC' ? 'BTC' : 'USDT')})
+                    </span>
                     <span className="text-[10px] text-textSecondary font-mono block mt-0.5 max-w-[240px] truncate select-all">{row.address}</span>
                   </div>
                 ),
@@ -361,8 +416,44 @@ export const AdminDepositAddressesPage: React.FC = () => {
               <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Network / Blockchain Protocol</label>
               <input
                 type="text"
+                list="edit-networks"
                 value={editNetwork}
                 onChange={(e) => setEditNetwork(e.target.value)}
+                required
+                className="w-full min-h-[44px] h-11 px-4 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
+              />
+              <datalist id="edit-networks">
+                <option value="BTC" />
+                <option value="ERC20" />
+                <option value="TRC20" />
+                <option value="BEP20" />
+                <option value="SOL" />
+                <option value="Polygon" />
+                <option value="Arbitrum" />
+                <option value="Optimism" />
+                <option value="Avalanche C-Chain" />
+              </datalist>
+            </div>
+
+            {/* Payment Asset Symbol */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Payment Asset Symbol</label>
+              <input
+                type="text"
+                value={editPaymentAssetSymbol}
+                onChange={(e) => setEditPaymentAssetSymbol(e.target.value)}
+                required
+                className="w-full min-h-[44px] h-11 px-4 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
+              />
+            </div>
+
+            {/* Payment Asset Name */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Payment Asset Name</label>
+              <input
+                type="text"
+                value={editPaymentAssetName}
+                onChange={(e) => setEditPaymentAssetName(e.target.value)}
                 required
                 className="w-full min-h-[44px] h-11 px-4 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
               />

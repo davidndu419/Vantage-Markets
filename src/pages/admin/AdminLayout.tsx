@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
+import { supportService } from '../../services/supportService';
 import {
   LayoutDashboard,
   Users,
@@ -20,6 +21,15 @@ export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { userProfile } = useAuth();
+  const [unreadSupportCount, setUnreadSupportCount] = useState(0);
+
+  useEffect(() => {
+    const unsub = supportService.onSupportChatsChange((chats) => {
+      const unreadCount = chats.filter((c) => c.unreadByAdmin).length;
+      setUnreadSupportCount(unreadCount);
+    });
+    return () => unsub();
+  }, []);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -80,14 +90,21 @@ export const AdminLayout: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 end={item.exact}
-                className={`flex items-center gap-3 px-4 py-3 rounded-btn text-xs font-semibold uppercase tracking-wider transition-all duration-200 border ${
+                className={`flex items-center justify-between px-4 py-3 rounded-btn text-xs font-semibold uppercase tracking-wider transition-all duration-200 border relative ${
                   active
                     ? 'bg-goldAccent/10 border-goldAccent/30 text-goldAccent shadow-[0_0_15px_rgba(201,168,76,0.03)]'
                     : 'border-transparent text-textSecondary hover:text-textPrimary hover:bg-borderCustom/40'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${active ? 'text-goldAccent' : ''}`} />
-                {item.name}
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-4 h-4 ${active ? 'text-goldAccent' : ''}`} />
+                  {item.name}
+                </div>
+                {item.path === '/admin/support' && unreadSupportCount > 0 && (
+                  <span className="bg-danger text-bgMain text-[9px] font-black px-1.5 py-0.5 rounded-full select-none shrink-0">
+                    {unreadSupportCount}
+                  </span>
+                )}
               </NavLink>
             );
           })}

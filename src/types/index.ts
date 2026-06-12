@@ -57,6 +57,12 @@ export interface Transaction {
   status: 'pending' | 'completed' | 'declined';
   createdAt: Timestamp | Date;
   visibleToUser: boolean;
+  paymentAssetSymbol?: string;
+  paymentAssetName?: string;
+  paymentNetwork?: string;
+  paymentAddress?: string;
+  paymentQuantity?: number;
+  paymentPriceAtTime?: number;
 }
 
 export interface DepositAddress {
@@ -67,6 +73,8 @@ export interface DepositAddress {
   qrCodeUrl: string;
   active: boolean;
   createdAt: Timestamp | Date;
+  paymentAssetSymbol?: string;
+  paymentAssetName?: string;
 }
 
 export interface SupportChat {
