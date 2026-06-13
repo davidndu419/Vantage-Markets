@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { userService } from '../services/userService';
 import { Card } from '../components/Card';
+import { BrandLogo } from '../components/BrandLogo';
 import { TrendingUp, Coins, ChevronRight } from 'lucide-react';
 
 export const MarketSelectionPage: React.FC = () => {
@@ -36,16 +37,8 @@ export const MarketSelectionPage: React.FC = () => {
       <div className="absolute bottom-[-20%] right-[-20%] h-[70vw] w-[70vw] bg-[#EF4444]/3 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Brand Header */}
-      <div className="flex items-center gap-3 mb-12 select-none">
-        <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-goldAccent text-bgMain font-extrabold text-2xl border border-goldAccent/40 shadow-[0_0_20px_rgba(201,168,76,0.25)]">
-          VM
-        </div>
-        <div>
-          <span className="font-extrabold text-2xl tracking-wider text-textPrimary">VANTAGE</span>
-          <span className="font-medium text-sm tracking-[0.25em] text-goldAccent block -mt-1 uppercase">
-            MARKETS
-          </span>
-        </div>
+      <div className="mb-12 select-none">
+        <BrandLogo size="lg" showText={true} />
       </div>
 
       <div className="w-full max-w-3xl text-center mb-10 relative z-10">

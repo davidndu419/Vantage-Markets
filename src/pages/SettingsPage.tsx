@@ -273,13 +273,6 @@ export const SettingsPage: React.FC = () => {
                 <span>Privacy & Cookies Policy</span>
                 <ChevronRight className="w-3.5 h-3.5 text-borderCustom" />
               </button>
-              <button
-                onClick={() => navigate('/legal/risk-disclosure')}
-                className="flex items-center justify-between text-left text-xs text-textSecondary hover:text-textPrimary font-semibold transition-colors py-1 cursor-pointer"
-              >
-                <span>Vantage Risk Disclosure</span>
-                <ChevronRight className="w-3.5 h-3.5 text-borderCustom" />
-              </button>
             </div>
           </Card>
         </div>

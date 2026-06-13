@@ -161,7 +161,7 @@ export const TermsOfServicePage: React.FC = () => {
                 'Identity abuse or impersonation of any individual or entity',
                 'Money laundering or structuring of transactions to conceal the origin of funds',
                 'Manipulation of platform systems, exploiting vulnerabilities, or automated abuse',
-                'Unauthorized access to other user accounts or administrative systems',
+                
                 'Any activity that violates applicable laws or financial regulations',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">
