@@ -5,7 +5,9 @@ export default async function handler(req: any, res: any) {
   try {
     // 1. CRON_SECRET validation
     const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const secretQuery = new URL(req.url || '', 'http://localhost').searchParams.get('secret') || '';
+    const isVercelCron = req.headers['x-vercel-cron'] === 'true';
+    if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}` && secretQuery !== process.env.CRON_SECRET) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 

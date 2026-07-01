@@ -687,11 +687,11 @@ export const LandingPage: React.FC = () => {
             <div className="text-[10px] text-textSecondary font-bold uppercase tracking-wider mt-1.5 font-mono">Active Traders</div>
           </div>
           <div>
-            <div className="text-3xl md:text-4xl font-extrabold text-textPrimary font-mono tracking-tight">$4.2M+</div>
+            <div className="text-3xl md:text-4xl font-extrabold text-textPrimary font-mono tracking-tight">$700M+</div>
             <div className="text-[10px] text-textSecondary font-bold uppercase tracking-wider mt-1.5 font-mono">Volume Traded</div>
           </div>
           <div>
-            <div className="text-3xl md:text-4xl font-extrabold text-textPrimary font-mono tracking-tight">50+</div>
+            <div className="text-3xl md:text-4xl font-extrabold text-textPrimary font-mono tracking-tight">20+</div>
             <div className="text-[10px] text-textSecondary font-bold uppercase tracking-wider mt-1.5 font-mono">Assets Listed</div>
           </div>
           <div>
