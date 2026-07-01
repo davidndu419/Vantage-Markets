@@ -5,7 +5,9 @@ export default async function handler(req: any, res: any) {
   try {
     // 1. CRON_SECRET validation
     const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const secretQuery = new URL(req.url || '', 'http://localhost').searchParams.get('secret') || '';
+    const isVercelCron = req.headers['x-vercel-cron'] === 'true';
+    if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}` && secretQuery !== process.env.CRON_SECRET) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -20,41 +22,63 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ success: true, message: 'No stock assets found to update.' });
     }
 
-    // 3. Fetch prices from Twelve Data
+    // 3. Fetch prices from Twelve Data (chunked with retries to avoid rate limits)
     const apiKey = process.env.TWELVE_DATA_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: 'TWELVE_DATA_API_KEY is not configured.' });
     }
 
     const tickers = stockAssets.map((asset) => asset.ticker);
-    const symbolsQuery = tickers.join(',');
-    const twelveDataUrl = `https://api.twelvedata.com/price?symbol=${symbolsQuery}&apikey=${apiKey}`;
 
-    const apiResponse = await fetch(twelveDataUrl);
-    if (!apiResponse.ok) {
-      throw new Error(`Twelve Data API returned status ${apiResponse.status}`);
-    }
+    const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+      const out: T[][] = [];
+      for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+      return out;
+    };
 
-    const data = await apiResponse.json();
-
-    if (data.status === 'error') {
-      return res.status(502).json({ error: 'Twelve Data API returned error: ' + data.message });
-    }
-
-    // 4. Parse response
+    const chunks = chunkArray(tickers, 5); // request up to 5 symbols per call
     const pricesToUpdate: { ticker: string; price: number }[] = [];
-    if (tickers.length === 1) {
-      const ticker = tickers[0];
-      if (data.price) {
-        pricesToUpdate.push({ ticker, price: parseFloat(data.price) });
-      }
-    } else {
-      tickers.forEach((ticker) => {
-        const tickerData = data[ticker];
-        if (tickerData && tickerData.price) {
-          pricesToUpdate.push({ ticker, price: parseFloat(tickerData.price) });
+
+    for (const chunk of chunks) {
+      const symbolsQuery = chunk.join(',');
+      const twelveDataUrl = `https://api.twelvedata.com/price?symbol=${symbolsQuery}&apikey=${apiKey}`;
+
+      let attempt = 0;
+      let chunkData: any = null;
+      while (attempt < 3) {
+        attempt += 1;
+        const apiResponse = await fetch(twelveDataUrl);
+        if (apiResponse.ok) {
+          chunkData = await apiResponse.json();
+          break;
         }
-      });
+        if (apiResponse.status === 429) {
+          // rate limited — small delay and retry
+          await new Promise((r) => setTimeout(r, 1100));
+          continue;
+        }
+        // other errors: break and surface
+        throw new Error(`Twelve Data API returned status ${apiResponse.status}`);
+      }
+
+      if (!chunkData) {
+        console.warn('Twelve Data chunk failed after retries:', chunk);
+        continue;
+      }
+
+      if (chunk.length === 1) {
+        const ticker = chunk[0];
+        if (chunkData.price) {
+          pricesToUpdate.push({ ticker, price: parseFloat(chunkData.price) });
+        }
+      } else {
+        chunk.forEach((ticker) => {
+          const tickerData = chunkData[ticker];
+          if (tickerData && tickerData.price) {
+            pricesToUpdate.push({ ticker, price: parseFloat(tickerData.price) });
+          }
+        });
+      }
     }
 
     // 5. Update Firestore assetPrices
