@@ -11,6 +11,7 @@
     "seed:assets": "node scripts/seedAssets.js"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "firebase": "^12.14.0",
     "firebase-admin": "^14.0.0",
     "lucide-react": "^1.17.0",
