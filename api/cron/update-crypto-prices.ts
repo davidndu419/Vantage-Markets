@@ -1,13 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { adminDb } from '../_lib/firebaseAdmin.js';
 
+function getCronSecret(req: any) {
+  const authHeader = String(req.headers.authorization || '');
+  if (authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+
+  const url = new URL(req.url || '', 'http://localhost');
+  const secretQuery = url.searchParams.get('secret') || '';
+  if (secretQuery) {
+    return secretQuery;
+  }
+
+  const cronSecretQuery = url.searchParams.get('cron-secret') || '';
+  if (cronSecretQuery) {
+    return cronSecretQuery;
+  }
+
+  const headerSecret = req.headers['x-cron-secret'] || req.headers['x-secret'] || '';
+  if (Array.isArray(headerSecret)) {
+    return headerSecret[0] || '';
+  }
+  return String(headerSecret || '');
+}
+
 export default async function handler(req: any, res: any) {
   try {
     // 1. CRON_SECRET validation
-    const authHeader = req.headers.authorization;
-    const secretQuery = new URL(req.url || '', 'http://localhost').searchParams.get('secret') || '';
+    const secret = getCronSecret(req);
     const isVercelCron = req.headers['x-vercel-cron'] === 'true';
-    if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}` && secretQuery !== process.env.CRON_SECRET) {
+    if (!isVercelCron && secret !== process.env.CRON_SECRET) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
