@@ -101,4 +101,64 @@ export const marketPriceService = {
 
     return quote;
   },
+
+  async syncAllPrices(): Promise<{ success: boolean; updatedCount: number; message: string }> {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Administrator authentication is required.');
+
+    const token = await user.getIdToken();
+    try {
+      const response = await fetch('/api/admin/sync-prices', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${token}`,
+          'content-type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return {
+          success: true,
+          updatedCount: data.updatedCount || 0,
+          message: data.message || `Updated ${data.updatedCount || 0} live market prices.`,
+        };
+      }
+    } catch (err) {
+      console.warn('Backend sync-prices endpoint unreachable, running fallback sync:', err);
+    }
+
+    // Fallback sync for dev mode
+    const assetsSnap = await getDocs(collection(db, 'assets'));
+    const assets = assetsSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Asset[];
+    const cryptoAssets = assets.filter((a) => a.type === 'crypto');
+
+    let updatedCount = 0;
+    if (cryptoAssets.length > 0) {
+      const ids = cryptoAssets.map((a) => a.coingeckoId || a.id).filter(Boolean).join(',');
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
+      if (res.ok) {
+        const data = await res.json();
+        const batch = writeBatch(db);
+        const now = new Date();
+
+        cryptoAssets.forEach((asset) => {
+          const coin = data[asset.coingeckoId || asset.id];
+          if (coin && typeof coin.usd === 'number') {
+            batch.set(doc(db, 'assetPrices', asset.ticker), { ticker: asset.ticker, price: coin.usd, updatedAt: now }, { merge: true });
+            batch.set(doc(db, 'assets', asset.id), { currentPrice: coin.usd }, { merge: true });
+            updatedCount += 1;
+          }
+        });
+
+        await batch.commit();
+      }
+    }
+
+    return {
+      success: true,
+      updatedCount,
+      message: `Updated ${updatedCount} live market prices.`,
+    };
+  },
 };

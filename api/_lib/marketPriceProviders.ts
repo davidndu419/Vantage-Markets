@@ -22,7 +22,7 @@ export const fetchStockSpotPrice = async (ticker: string): Promise<number> => {
     throw new Error(`Twelve Data returned HTTP ${response.status}.`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as any;
   if (data.status === 'error') {
     throw new Error(data.message || 'Twelve Data rejected the ticker.');
   }
@@ -51,6 +51,6 @@ export const fetchCryptoSpotPrice = async (coingeckoId: string): Promise<number>
     throw new Error(`CoinGecko returned HTTP ${response.status}.`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as any;
   return parsePositivePrice(data[id]?.usd, 'CoinGecko');
 };

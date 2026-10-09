@@ -45,37 +45,28 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ success: true, message: 'No stock assets found to update.' });
     }
 
-    // 3. Cursor-based fetch: process N tickers per run to respect Twelve Data rate limits
+    // 3. Process all tickers in batches of 8 (Twelve Data free rate limit)
     const apiKey = process.env.TWELVE_DATA_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: 'TWELVE_DATA_API_KEY is not configured.' });
     }
 
     const tickers = stockAssets.map((asset) => asset.ticker).sort();
-
-    const STATE_DOC = adminDb.collection('cronState').doc('stockUpdater');
-    const stateSnap = await STATE_DOC.get();
-    const state = stateSnap.exists ? (stateSnap.data() as any) : { lastIndex: 0 };
-    const lastIndex = typeof state.lastIndex === 'number' ? state.lastIndex : 0;
-
-    const N = 8; // number of tickers to process per run (match Twelve Data Basic 8/min)
-    const resultsToProcess: string[] = [];
-    const start = lastIndex % tickers.length;
     if (tickers.length === 0) {
       return res.status(200).json({ success: true, message: 'No tickers to process.' });
     }
 
-    if (start + N <= tickers.length) {
-      resultsToProcess.push(...tickers.slice(start, start + N));
-    } else {
-      resultsToProcess.push(...tickers.slice(start));
-      resultsToProcess.push(...tickers.slice(0, (start + N) % tickers.length));
+    const chunkSize = 8;
+    const tickerChunks: string[][] = [];
+    for (let i = 0; i < tickers.length; i += chunkSize) {
+      tickerChunks.push(tickers.slice(i, i + chunkSize));
     }
 
     const pricesToUpdate: { ticker: string; price: number }[] = [];
 
-    for (const ticker of resultsToProcess) {
-      const twelveDataUrl = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(ticker)}&apikey=${apiKey}`;
+    for (const chunk of tickerChunks) {
+      const symbolsParam = chunk.join(',');
+      const twelveDataUrl = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbolsParam)}&apikey=${apiKey}`;
       let fetched = false;
       let lastError: string | null = null;
 
@@ -85,8 +76,7 @@ export default async function handler(req: any, res: any) {
           if (!apiResponse.ok) {
             lastError = `Twelve Data API returned status ${apiResponse.status}`;
             if (apiResponse.status === 429) {
-              // wait and retry
-              await new Promise((r) => setTimeout(r, 1000));
+              await new Promise((r) => setTimeout(r, 1200));
               continue;
             }
             break;
@@ -96,14 +86,22 @@ export default async function handler(req: any, res: any) {
           if (data.status === 'error') {
             lastError = data.message || 'Twelve Data returned an error';
             if (typeof data.message === 'string' && (data.message.toLowerCase().includes('rate limit') || data.message.includes('429'))) {
-              await new Promise((r) => setTimeout(r, 1000));
+              await new Promise((r) => setTimeout(r, 1200));
               continue;
             }
             break;
           }
 
-          if (data.price) {
-            pricesToUpdate.push({ ticker, price: parseFloat(data.price) });
+          if (chunk.length === 1 && data.price) {
+            pricesToUpdate.push({ ticker: chunk[0], price: parseFloat(data.price) });
+            fetched = true;
+          } else {
+            chunk.forEach((sym) => {
+              const item = data[sym] || data[sym.toUpperCase()];
+              if (item && item.price) {
+                pricesToUpdate.push({ ticker: sym, price: parseFloat(item.price) });
+              }
+            });
             fetched = true;
           }
         } catch (err: any) {
@@ -113,16 +111,12 @@ export default async function handler(req: any, res: any) {
       }
 
       if (!fetched) {
-        console.warn(`Skipping ${ticker} after retries: ${lastError}`);
+        console.warn(`Skipping chunk [${symbolsParam}] after retries: ${lastError}`);
       }
 
-      // small safety delay between requests
-      await new Promise((r) => setTimeout(r, 800));
+      // safety delay between batch requests
+      await new Promise((r) => setTimeout(r, 1000));
     }
-
-    // advance lastIndex
-    const newLastIndex = (lastIndex + N) % tickers.length;
-    await STATE_DOC.set({ lastIndex: newLastIndex, updatedAt: new Date() }, { merge: true });
 
     // 5. Update Firestore assetPrices
     if (pricesToUpdate.length > 0) {

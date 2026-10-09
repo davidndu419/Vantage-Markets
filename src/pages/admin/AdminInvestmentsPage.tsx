@@ -12,12 +12,29 @@ import { Badge } from '../../components/Badge';
 import { Loader } from '../../components/Loader';
 import { Modal } from '../../components/Modal';
 import { AssetLogo } from '../../components/AssetLogo';
-import { Plus, Edit2, Trash2, Coins } from 'lucide-react';
+import { Plus, Edit2, Trash2, Coins, RefreshCw } from 'lucide-react';
 
 export const AdminInvestmentsPage: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [syncingPrices, setSyncingPrices] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const handleSyncPrices = async () => {
+    setSyncingPrices(true);
+    setSyncMessage(null);
+    try {
+      const res = await marketPriceService.syncAllPrices();
+      setSyncMessage({ text: res.message || 'Prices updated successfully.', type: 'success' });
+      await fetchAssetsAndPrices();
+    } catch (err: any) {
+      setSyncMessage({ text: err?.message || 'Failed to sync prices.', type: 'error' });
+    } finally {
+      setSyncingPrices(false);
+      setTimeout(() => setSyncMessage(null), 5000);
+    }
+  };
 
   // Add Asset Form States
   const [newAssetId, setNewAssetId] = useState('');
@@ -240,10 +257,36 @@ export const AdminInvestmentsPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Title */}
-      <div>
-        <h1 className="text-xl font-extrabold text-textPrimary uppercase tracking-wider">Asset Catalog Configurations</h1>
-        <p className="text-[10px] text-textSecondary font-semibold uppercase tracking-widest block mt-1">Configure trading instruments, deposit parameters, and review current spot rates</p>
+      {/* Title & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-extrabold text-textPrimary uppercase tracking-wider">Asset Catalog Configurations</h1>
+          <p className="text-[10px] text-textSecondary font-semibold uppercase tracking-widest block mt-1">Configure trading instruments, deposit parameters, and review current spot rates</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {syncMessage && (
+            <span
+              className={`text-xs px-3 py-1.5 rounded-md font-medium ${
+                syncMessage.type === 'success'
+                  ? 'bg-success/15 text-success border border-success/30'
+                  : 'bg-danger/15 text-danger border border-danger/30'
+              }`}
+            >
+              {syncMessage.text}
+            </span>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleSyncPrices}
+            disabled={syncingPrices}
+            className="flex items-center gap-2 border-goldAccent/30 hover:border-goldAccent text-textPrimary hover:bg-goldAccent/10"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-goldAccent ${syncingPrices ? 'animate-spin' : ''}`} />
+            {syncingPrices ? 'Syncing Market...' : 'Sync Live Prices'}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

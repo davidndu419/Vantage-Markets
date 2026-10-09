@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { adminService } from '../../services/adminService';
+import { marketPriceService } from '../../services/marketPriceService';
 import type { User, Transaction } from '../../types';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
@@ -16,7 +17,8 @@ import {
   ArrowRight,
   Check,
   X,
-  Clock
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 
 export const AdminDashboardPage: React.FC = () => {
@@ -27,6 +29,23 @@ export const AdminDashboardPage: React.FC = () => {
   const [openTicketsCount, setOpenTicketsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actioningTxId, setActioningTxId] = useState<string | null>(null);
+  const [syncingPrices, setSyncingPrices] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const handleSyncPrices = async () => {
+    setSyncingPrices(true);
+    setSyncMessage(null);
+    try {
+      const res = await marketPriceService.syncAllPrices();
+      setSyncMessage({ text: res.message || 'Prices updated successfully.', type: 'success' });
+      await fetchDashboardData();
+    } catch (err: any) {
+      setSyncMessage({ text: err?.message || 'Failed to sync prices.', type: 'error' });
+    } finally {
+      setSyncingPrices(false);
+      setTimeout(() => setSyncMessage(null), 5000);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -147,10 +166,36 @@ export const AdminDashboardPage: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Title */}
-      <div>
-        <h1 className="text-xl font-extrabold text-textPrimary uppercase tracking-wider">Operational Dashboard</h1>
-        <p className="text-[10px] text-textSecondary font-semibold uppercase tracking-widest block mt-1">Real-time system health and administration node</p>
+      {/* Title & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-extrabold text-textPrimary uppercase tracking-wider">Operational Dashboard</h1>
+          <p className="text-[10px] text-textSecondary font-semibold uppercase tracking-widest block mt-1">Real-time system health and administration node</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {syncMessage && (
+            <span
+              className={`text-xs px-3 py-1.5 rounded-md font-medium ${
+                syncMessage.type === 'success'
+                  ? 'bg-success/15 text-success border border-success/30'
+                  : 'bg-danger/15 text-danger border border-danger/30'
+              }`}
+            >
+              {syncMessage.text}
+            </span>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleSyncPrices}
+            disabled={syncingPrices}
+            className="flex items-center gap-2 border-goldAccent/30 hover:border-goldAccent text-textPrimary hover:bg-goldAccent/10"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-goldAccent ${syncingPrices ? 'animate-spin' : ''}`} />
+            {syncingPrices ? 'Syncing Market...' : 'Sync Live Prices'}
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}

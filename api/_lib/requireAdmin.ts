@@ -43,7 +43,7 @@ export const requireAdmin = async (authorization?: string): Promise<string> => {
 
   if (!response.ok) throw new Error('Unauthorized');
 
-  const userDocument = await response.json();
+  const userDocument = (await response.json()) as any;
   if (userDocument.fields?.role?.stringValue !== 'admin') {
     throw new Error('Forbidden');
   }
