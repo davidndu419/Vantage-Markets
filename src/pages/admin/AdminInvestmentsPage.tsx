@@ -12,7 +12,7 @@ import { Badge } from '../../components/Badge';
 import { Loader } from '../../components/Loader';
 import { Modal } from '../../components/Modal';
 import { AssetLogo } from '../../components/AssetLogo';
-import { Plus, Edit2, Trash2, Coins, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Coins, RefreshCw, Sliders, Layers } from 'lucide-react';
 
 export const AdminInvestmentsPage: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -20,6 +20,52 @@ export const AdminInvestmentsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [syncingPrices, setSyncingPrices] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // Bulk Limits State
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkMinDeposit, setBulkMinDeposit] = useState('100');
+  const [bulkMaxDeposit, setBulkMaxDeposit] = useState('20000');
+  const [bulkFilterType, setBulkFilterType] = useState<'all' | 'crypto' | 'stock'>('all');
+  const [submittingBulk, setSubmittingBulk] = useState(false);
+  const [bulkError, setBulkError] = useState('');
+  const [bulkSuccess, setBulkSuccess] = useState('');
+
+  const handleOpenBulkEdit = () => {
+    setBulkError('');
+    setBulkSuccess('');
+    setBulkEditOpen(true);
+  };
+
+  const handleApplyBulkLimits = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submittingBulk) return;
+
+    const minDep = parseFloat(bulkMinDeposit);
+    const maxDep = parseFloat(bulkMaxDeposit);
+
+    if (isNaN(minDep) || minDep <= 0 || isNaN(maxDep) || maxDep <= minDep) {
+      setBulkError('Please enter positive numbers where maximum deposit is strictly greater than minimum deposit.');
+      return;
+    }
+
+    setSubmittingBulk(true);
+    setBulkError('');
+    setBulkSuccess('');
+
+    try {
+      const count = await adminService.updateBulkAssetLimits(minDep, maxDep, bulkFilterType);
+      setBulkSuccess(`Successfully updated limits across ${count} assets.`);
+      await fetchAssetsAndPrices();
+      setTimeout(() => {
+        setBulkEditOpen(false);
+        setBulkSuccess('');
+      }, 1200);
+    } catch (err: any) {
+      setBulkError(err.message || 'Failed to update bulk limits.');
+    } finally {
+      setSubmittingBulk(false);
+    }
+  };
 
   const handleSyncPrices = async () => {
     setSyncingPrices(true);
@@ -276,6 +322,15 @@ export const AdminInvestmentsPage: React.FC = () => {
               {syncMessage.text}
             </span>
           )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleOpenBulkEdit}
+            className="flex items-center gap-2 border-goldAccent/30 hover:border-goldAccent text-textPrimary hover:bg-goldAccent/10"
+          >
+            <Sliders className="w-3.5 h-3.5 text-goldAccent" />
+            Bulk Edit Limits
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -642,6 +697,141 @@ export const AdminInvestmentsPage: React.FC = () => {
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* Bulk Edit Limits Modal */}
+      <Modal
+        isOpen={bulkEditOpen}
+        onClose={() => !submittingBulk && setBulkEditOpen(false)}
+        title="Bulk Update Investment Limits"
+      >
+        <form onSubmit={handleApplyBulkLimits} className="flex flex-col gap-5 pt-1">
+          <p className="text-xs text-textSecondary leading-relaxed">
+            Apply universal minimum and maximum deposit parameters across multiple instruments simultaneously in one atomic transaction.
+          </p>
+
+          {bulkError && (
+            <div className="p-3 bg-danger/10 border border-danger/30 rounded-lg text-danger text-xs font-semibold">
+              {bulkError}
+            </div>
+          )}
+
+          {bulkSuccess && (
+            <div className="p-3 bg-success/10 border border-success/30 rounded-lg text-success text-xs font-semibold">
+              {bulkSuccess}
+            </div>
+          )}
+
+          {/* Scope Selector */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">Target Instrument Scope</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setBulkFilterType('all')}
+                className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all text-center ${
+                  bulkFilterType === 'all'
+                    ? 'bg-goldAccent/15 border-goldAccent text-goldAccent'
+                    : 'bg-bgMain border-borderCustom text-textSecondary hover:text-textPrimary'
+                }`}
+              >
+                All Assets ({assets.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkFilterType('crypto')}
+                className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all text-center ${
+                  bulkFilterType === 'crypto'
+                    ? 'bg-goldAccent/15 border-goldAccent text-goldAccent'
+                    : 'bg-bgMain border-borderCustom text-textSecondary hover:text-textPrimary'
+                }`}
+              >
+                Crypto Only ({assets.filter((a) => a.type === 'crypto').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkFilterType('stock')}
+                className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all text-center ${
+                  bulkFilterType === 'stock'
+                    ? 'bg-goldAccent/15 border-goldAccent text-goldAccent'
+                    : 'bg-bgMain border-borderCustom text-textSecondary hover:text-textPrimary'
+                }`}
+              >
+                Stocks Only ({assets.filter((a) => a.type === 'stock').length})
+              </button>
+            </div>
+          </div>
+
+          {/* Limits */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">New Min Deposit (USD)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary font-bold text-xs">$</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={bulkMinDeposit}
+                  onChange={(e) => setBulkMinDeposit(e.target.value)}
+                  placeholder="e.g. 50"
+                  required
+                  className="w-full min-h-[44px] h-11 pl-7 pr-3 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[9px] text-textSecondary uppercase tracking-widest font-bold">New Max Deposit (USD)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary font-bold text-xs">$</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={bulkMaxDeposit}
+                  onChange={(e) => setBulkMaxDeposit(e.target.value)}
+                  placeholder="e.g. 20000"
+                  required
+                  className="w-full min-h-[44px] h-11 pl-7 pr-3 rounded-[8px] bg-bgMain border border-borderCustom text-textPrimary text-xs font-semibold tracking-wide focus:outline-none focus:border-goldAccent"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg bg-surface border border-borderCustom text-[11px] text-textSecondary flex items-center gap-2">
+            <Layers className="w-4 h-4 text-goldAccent shrink-0" />
+            <span>
+              Will apply limits: <strong className="text-textPrimary">${bulkMinDeposit || 0}</strong> min / <strong className="text-textPrimary">${bulkMaxDeposit || 0}</strong> max across{' '}
+              <strong className="text-goldAccent">
+                {bulkFilterType === 'all'
+                  ? assets.length
+                  : bulkFilterType === 'crypto'
+                  ? assets.filter((a) => a.type === 'crypto').length
+                  : assets.filter((a) => a.type === 'stock').length}
+              </strong>{' '}
+              catalog assets.
+            </span>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-borderCustom">
+            <Button
+              type="button"
+              variant="secondary"
+              className="text-[9px] font-extrabold uppercase tracking-widest px-4 min-h-[38px] h-9 border-borderCustom"
+              onClick={() => setBulkEditOpen(false)}
+              disabled={submittingBulk}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              className="text-[9px] font-extrabold uppercase tracking-widest px-5.5 min-h-[38px] h-9"
+              disabled={submittingBulk}
+            >
+              {submittingBulk ? 'Applying Limits...' : 'Apply Bulk Limits'}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

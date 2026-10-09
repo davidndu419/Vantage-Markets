@@ -392,6 +392,44 @@ export const adminService = {
     }
   },
 
+  async updateBulkAssetLimits(
+    minDeposit: number,
+    maxDeposit: number,
+    filterType: 'all' | 'stock' | 'crypto' = 'all'
+  ): Promise<number> {
+    try {
+      if (!Number.isFinite(minDeposit) || minDeposit <= 0) {
+        throw new Error('Minimum deposit must be a positive number.');
+      }
+      if (!Number.isFinite(maxDeposit) || maxDeposit <= minDeposit) {
+        throw new Error('Maximum deposit must be strictly greater than minimum deposit.');
+      }
+
+      const assetsSnap = await getDocs(collection(db, 'assets'));
+      const batch = writeBatch(db);
+      let count = 0;
+
+      assetsSnap.docs.forEach((docSnap) => {
+        const data = docSnap.data() as Asset;
+        if (filterType === 'all' || data.type === filterType) {
+          batch.update(doc(db, 'assets', docSnap.id), {
+            minDeposit,
+            maxDeposit,
+          });
+          count += 1;
+        }
+      });
+
+      if (count > 0) {
+        await batch.commit();
+      }
+      return count;
+    } catch (error) {
+      console.error('Error updating bulk asset limits:', error);
+      throw error;
+    }
+  },
+
   async deleteAsset(assetId: string): Promise<void> {
     try {
       const assetRef = doc(db, 'assets', assetId);
